@@ -1,21 +1,23 @@
 # LangFight - Kannada Learning Game
 
-A **fully local**, interactive educational game to learn Kannada vocabulary through drag-and-drop gameplay.
+An interactive educational game to learn Kannada vocabulary through drag-and-drop gameplay with particle effects and audio feedback.
 
 ## ✨ Key Features
 
-- **🎮 100% Local** - No server required, runs entirely in your browser
-- **🔒 Encrypted Storage** - Your data is encrypted with a unique key stored in your browser
-- **📥 Portable Data** - Export/import your EMDATA.txt file
-- **☁️ Optional Cloud Sync** - Manually sync your encrypted data via curl
-- **🎵 Audio & Visual Feedback** - Immediate feedback for correct/wrong matches
-- **📱 Offline First** - Works without internet connection
+- **🎮 Web Trial + Local Full Version** - Try 6 levels online, download for unlimited access
+- **🔒 Encrypted Storage** - XOR encryption with custom keys (EMDATA.txt + .env)
+- **💾 Auto-Save/Load** - Progress automatically saved and restored
+- **☁️ Auto-Sync** - Optional automatic cloud backup (enabled by default to local server)
+- **🎵 Audio & Visual Feedback** - Particle explosions and sound effects
+- **📥 Export/Import** - Backup and restore your encrypted save files
+- **📱 Offline Full Version** - Run locally without internet
 
 ## Game Mechanics
 
 ### Visual & Audio Feedback
-- **✅ Correct matches**: Green particle explosion + happy chime
-- **❌ Wrong matches**: Red X indicator + error sound
+- **✅ Correct matches**: Green particle explosion + ascending chime
+- **❌ Wrong matches**: Red X indicator + descending error tone
+- **Real-time feedback**: Immediate response to every action
 
 ### Progressive Difficulty
 - **Levels 1-2**: Letters (ಅ, ಇ, ಉ, etc.)
@@ -27,223 +29,390 @@ A **fully local**, interactive educational game to learn Kannada vocabulary thro
 - 🟠 **Orange Tanks** (medium) - Words
 - 🟣 **Purple Blimps** (slow) - Sentences
 
-## Trial vs Full Version
+## Features
 
-### Trial Version (Default)
-- **6 Free Levels** - Complete access to levels 1-6
-- No data persistence
-- When you complete level 6, you'll see a download prompt for the full version
-
-### Full Version
-- **Unlimited Levels** - Access to all levels including advanced sentences
-- **Encrypted Data Storage** - Progress saved in browser with AES-like encryption
-- **Auto-Save** - Saves every 30 seconds + on game over
-- **Persistent Stats** - Track high scores, games played, and total score
-- **Export/Import** - Backup and restore your encrypted data
-- **Cloud Sync** - Optional remote backup via curl
+### Full Desktop Version (GitHub Clone)
+When you run `python3 LangFight.py`, you get:
+- **Unlimited Levels** - Access all content (letters, words, sentences)
+- **Encrypted Data Storage** - EMDATA.txt with custom KEY in .env
+- **Auto-Save** - Saves every 30 seconds + on browser close
+- **Auto-Load** - Restores progress with "Welcome Back!" message
+- **Auto-Sync** - Syncs to local server automatically (configurable)
+- **Persistent Stats** - High scores, games played, total score
+- **Export/Import** - Backup encrypted save files
+- **Browser Fallback** - Works offline with browser localStorage
 
 ## Installation & Running
 
 ### Requirements
-- Python 3.7+ (for launcher only)
+- Python 3.7+
 - Modern web browser (Chrome, Firefox, Safari, Edge)
 
 ### Quick Start
 
-**Option 1: Main Site (Recommended)**
-```bash
-cd mainsite
-python3 server.py
-# Opens http://localhost:9048 with landing page
-```
-
-**Option 2: Direct Game**
+**⭐ Recommended: Direct Full Version**
 ```bash
 python3 LangFight.py
-# Opens http://localhost:9048 directly to game
+# Opens game directly with ?full=true (unlimited levels)
 ```
 
-**Option 3: Browser Only**
-- Double-click `src/index.html`
-- Or drag `src/index.html` into browser
+This launches:
+- Full version with unlimited levels
+- Auto-save and auto-load functionality
+- Encrypted data storage (EMDATA.txt)
+- Local HTTP server on port 9050
+- Sync server at `/server/save` and `/server/load`
 
 ### Access Full Version
 
-Add `?full=true` to the URL:
-- **Trial**: `file:///path/to/LangFight/src/index.html`
-- **Full**: `file:///path/to/LangFight/src/index.html?full=true`
+**Direct launch** (Only way for GitHub clone)
+```bash
+python3 LangFight.py
+# Opens full version with unlimited levels
+```
+
+## Server Architecture
+
+The Python launcher (`LangFight.py`) starts a local HTTP server on port 9050.
+
+### Routes (Port 9050)
+
+**Main Route:**
+- `/` - Full version game (unlimited levels)
+
+**Sync Endpoints:**
+- `/server/save` - Save encrypted game data (POST)
+- `/server/load` - Load encrypted game data (GET)
+
+**API Endpoints:**
+- `/api/data/save` - Save game data (POST)
+- `/api/data/load` - Load game data (GET)
+- `/api/sync/settings` - Configure sync settings (GET/POST)
+
+### Default Sync Configuration
+
+By default, the full version auto-syncs to the local server:
+- **Default URL**: `http://localhost:9050/server/save`
+- **Auto-sync**: Enabled by default
+- **Customizable**: Change in-game (💾 Data → ⚙️ Sync Settings)
+
+**To change default sync URL**, edit `LangFight.py` or use environment variable:
+```bash
+export SYNC_URL=https://your-server.com/api/save
+python3 LangFight.py
+```
 
 ## Data Storage & Encryption
 
-### How It Works (Full Version)
+### Server-Side Encryption (Full Version)
 
-1. **Encryption Key Generation**:
-   - On first visit, a secure 64-character hex key is generated
-   - Stored in browser's localStorage as `ENCRYPTION_KEY`
-   - Used to encrypt all your game data
+1. **Encryption Key** (`.env` file):
+   - Generated on first run: 64-character hex key
+   - Stored in project root as `KEY=...`
+   - Used for all encryption/decryption
 
-2. **Encrypted Data Storage**:
-   - Game progress saved to browser's localStorage as `EMDATA`
-   - Data encrypted using XOR encryption with your unique key
-   - Stores: Level, Score, High Score, Games Played, Total Score, Last Played
+2. **Encrypted Data** (`EMDATA.txt`):
+   - Stores: Level, Score, High Score, Games Played, Stats, Last Played
+   - Encrypted using XOR encryption with your KEY
+   - Saved automatically on exit and periodically during play
 
-3. **Auto-Save** (Full Version Only):
-   - Game automatically saves every 30 seconds
-   - Data saved on game over
-   - No manual action required
+3. **Auto-Save Triggers** (Full Version Only):
+   - Every 30 seconds during gameplay
+   - When browser tab/window closes
+   - When server shuts down (Ctrl+C)
+   - On game over
+
+4. **Auto-Load on Startup**:
+   - Server displays saved game info on startup
+   - Game automatically loads and restores progress
+   - Shows "Welcome Back! Level X • Score: Y" message
+
+### Browser Fallback Storage
+
+If server is unavailable:
+- Falls back to browser's localStorage
+- Uses `crypto.js` for browser-based encryption
+- Data stored as `EMDATA` in localStorage
+- Encryption key stored as `ENCRYPTION_KEY`
 
 ### Data Management
 
-Click the **💾 Data** button in the game to:
+Click **💾 Data** button in-game to:
+1. **📥 Export EMDATA.txt** - Download encrypted save file
+2. **📤 Import EMDATA.txt** - Upload backup save file
+3. **🔑 Export .env Key** - Download encryption key
+4. **⚙️ Sync Settings** - Configure auto-sync URL and enable/disable
 
-1. **📥 Export EMDATA.txt** - Download your encrypted data as a file
-2. **📤 Import EMDATA.txt** - Upload a previously exported file
-3. **🔑 Export .env Key** - Download your encryption key as `.env` file
-4. **☁️ Copy Sync Command** - Get curl command to upload to your server
+### Cloud Sync
 
-### Cloud Sync (Optional)
+**Auto-Sync (Enabled by Default):**
+- Automatically syncs to `http://localhost:9050/server/save`
+- Triggered after every save operation
+- Uses curl subprocess in background
+- Change URL in sync settings or `mainsite/server.py`
 
-To backup your data to a remote server:
+**Manual Sync:**
+```bash
+# Using provided script
+chmod +x sync_data.sh
+./sync_data.sh https://your-server.com/api/save
 
-1. **Export your data**:
-   - Click 💾 Data → 📥 Export EMDATA.txt
+# Or use curl directly
+curl -X POST https://your-server.com/api/save \
+  -H "Content-Type: application/json" \
+  -d @EMDATA.txt
+```
 
-2. **Upload using the shell script**:
-   ```bash
-   chmod +x sync_data.sh
-   ./sync_data.sh https://your-server.com/api/save
-   ```
-
-3. **Or use the curl command**:
-   - Click 💾 Data → ☁️ Copy Sync Command
-   - Paste and run in terminal
-
-**Note**: Data is uploaded encrypted - your server only sees encrypted text!
+**Configure Sync in Game:**
+1. Click 💾 Data → ⚙️ Sync Settings
+2. Enter your server URL
+3. Enable/disable auto-sync
+4. Click Save
 
 ## Game Controls
 
-- **Drag and Drop**: Drag Kannada words from sidebar to matching vehicles
-- **CPU Mode**: Auto-play feature (Password: `abc123`)
-- **Speed Control**: Adjust game speed (minimum 1x)
-- **Level Skip**: Jump to any level (limited to level 6 in trial mode)
-- **Fullscreen**: Press `*` key to toggle fullscreen
+- **Drag and Drop**: Drag Kannada words to matching vehicles
+- **CPU Mode**: Auto-play (Password: `abc123`)
+- **Speed Control**: Adjust game speed (⚡ button)
+- **Level Skip**: Jump to levels (📊 button)
+- **Fullscreen**: Press `*` key
+- **Data Menu**: Save/load management (💾 button)
 
 ## File Structure
 
 ```
 LangFight/
-├── mainsite/                 # Main website + server ⭐ START HERE
-│   ├── server.py            # Main server with landing page
-│   ├── index.html           # Landing page
-│   └── style.css            # Landing page styles
+├── LangFight.py              # 🌟 Main launcher (starts server + opens game)
+├── encryption_manager.py     # Server-side encryption handler
+├── .env                      # Encryption key (auto-generated)
+├── EMDATA.txt                # Encrypted save data (auto-created)
+├── sync_settings.json        # Sync configuration (auto-created)
+├── sync_data.sh              # Manual cloud sync script
 ├── src/                      # Game files
 │   ├── index.html           # Game UI
-│   ├── game.js              # Core game logic
-│   ├── crypto.js            # Browser encryption
-│   ├── vocabulary.js        # Kannada vocabulary
+│   ├── game.js              # Core game logic ⚙️ CONFIG at top
+│   ├── crypto.js            # Browser-side encryption
+│   ├── vocabulary.js        # Kannada vocabulary database
 │   ├── style.css            # Game styles
-│   └── Map.png              # Game path background
-├── LangFight.py              # Direct game launcher
-├── encryption_manager.py     # Server-side encryption
-├── sync_data.sh              # Manual cloud sync script
-├── .gitignore               # Protects sensitive files
+│   └── Map.png              # Path background image
+├── .gitignore               # Protects .env and EMDATA.txt
 └── README.md                # This file
 ```
 
-## Browser Storage
+## Configuration
 
-The game uses browser's localStorage to store:
+### Easy Configuration Points
 
-- `ENCRYPTION_KEY` - Your unique 64-char hex encryption key
-- `EMDATA` - Your encrypted game data (encrypted with your key)
-- `highScore` - Cached high score (unencrypted)
-- `gamesPlayed` - Number of games played
-- `totalScore` - Cumulative score across all games
+The game has a config section at the top of `src/game.js`:
 
-**Note**: Data persists per browser. Use Export/Import to move between browsers or backup.
+**`src/game.js`** (Lines 1-6):
+```javascript
+// ============================================================
+// CONFIGURATION - Easy to modify
+// ============================================================
+const SERVER_PORT = 9050;  // Change this to match your server port
+const SERVER_URL = `http://localhost:${SERVER_PORT}`;
+// ============================================================
+```
 
-## Security Notes
+### Change Port
 
-- **Encryption key** is stored in browser's localStorage - keep it safe!
-- **Export your .env key** regularly as backup (💾 Data → 🔑 Export .env Key)
-- Data is encrypted before being uploaded to any remote server
-- Even if someone gets your EMDATA.txt, they can't read it without your key
-- If you clear browser data, you'll lose your encryption key (export it first!)
-- Each browser has its own key - export/import to sync between browsers
+1. Edit `src/game.js` → Change `SERVER_PORT = 9050`
+2. Edit `LangFight.py` → Change `PORT = 9050`
+3. Restart
+
+### Change Sync Server
+
+**Method 1: Environment variable** (Recommended)
+```bash
+export SYNC_URL=https://your-server.com/api/save
+python3 LangFight.py
+```
+
+**Method 2: In-game settings** (Per user)
+- Click 💾 Data → ⚙️ Sync Settings
+- Enter URL and save
+
+## Server Startup Info
+
+When you run `python3 LangFight.py`, the console shows:
+
+```
+============================================================
+🎮 LangFight - Kannada Learning Game
+============================================================
+Server: http://localhost:9050/
+Sync Endpoint: http://localhost:9050/server/save
+Encryption: ✓ Key loaded
+Sync: ✓ Enabled (local server)
+
+Saved Game: ✓ Found (Level 5, Score 1230)
+
+Features:
+  ✓ Full version with unlimited levels
+  ✓ Encrypted data storage (EMDATA.txt)
+  ✓ Auto-save every 30s + on exit
+  ✓ Auto-load on startup
+  ✓ Sync server at /server/save
+
+Press Ctrl+C to stop the server
+============================================================
+```
 
 ## Customization
 
 ### Change Vocabulary
-Edit `src/vocabulary.js` to add/modify:
-- Letters
-- Words
-- Sentences
+Edit `src/vocabulary.js`:
+```javascript
+levels: {
+  1: [
+    { english: 'A', kannada: 'ಅ', difficulty: 'letter' },
+    // Add more...
+  ]
+}
+```
 
 ### Change Colors/Styles
 Edit `src/style.css` for visual customization
 
+### Change Vehicle Colors
+Edit `src/game.js` in the `Tank` class:
+```javascript
+getColor() {
+  switch (this.vehicleType) {
+    case 'suv': return '#4CAF50';      // Green
+    case 'tank': return '#FF9800';     // Orange
+    case 'blimp': return '#9C27B0';    // Purple
+  }
+}
+```
+
 ## Troubleshooting
 
-### Game won't open
-- **Just open `src/index.html` in any browser** - no server needed!
-- Or use Python launcher: `python3 LangFight.py`
-- Make sure you're not trying to open the root folder
+### Game won't start
+```bash
+# Make sure you're in the LangFight directory
+cd /path/to/LangFight
+
+# Launch the game
+python3 LangFight.py
+```
+
+### Port already in use
+```bash
+# Kill process on port 9050
+lsof -ti:9050 | xargs kill -9
+
+# Or change the port in both files (see Configuration section)
+```
 
 ### Data not saving
-- Check that you're using full version (`?full=true` in URL)
+- Check you're using full version (`python3 LangFight.py`)
 - Open browser console (F12) and check for errors
-- Try exporting data manually (💾 Data → 📥 Export)
+- Verify .env file exists with KEY=...
+- Check EMDATA.txt was created in project root
 
-### Lost my encryption key
-- If you exported your .env key file, you can restore it manually
-- Open browser console (F12) and run:
-  ```javascript
-  localStorage.setItem('ENCRYPTION_KEY', 'your-64-char-key-here')
-  ```
-- Then import your EMDATA.txt file
+### Lost encryption key
+1. If you have backup .env file, restore it to project root
+2. If not, you'll need to start fresh (old data can't be decrypted)
+3. **Prevention**: Regularly export your .env key (💾 Data → 🔑 Export .env)
 
 ### Can't import EMDATA.txt
-- Make sure the file is valid (exported from the game)
-- Check that your encryption key hasn't changed
-- If you have a backup .env file, restore the key first (see above)
+- Ensure .env file has the correct KEY
+- Verify EMDATA.txt is valid (exported from same game)
+- Check file isn't corrupted
+- Try exporting again from working installation
 
-### Cloud sync not working
-- Ensure `sync_data.sh` has execute permissions: `chmod +x sync_data.sh`
-- Check `curl` is installed: `curl --version`
-- Verify your server accepts POST requests with JSON payload
-- Test with: `./sync_data.sh https://your-server.com/api/save`
+### Sync not working
+- Check server is running (`python3 LangFight.py`)
+- Verify sync URL in settings (💾 Data → ⚙️ Sync Settings)
+- Check server console for error messages
+- Test endpoint: `curl http://localhost:9050/server/load`
+
+### Welcome back message not showing
+- Check EMDATA.txt exists with data
+- Open browser console (F12) for errors
+- Verify server loaded the data (check server console on startup)
+- Ensure server is running (`python3 LangFight.py`)
 
 ## Development
 
 ### Architecture
 
-This is a **fully client-side application**:
-- **No backend server** - everything runs in the browser
-- **No database** - uses browser's localStorage
-- **No npm/build step** - pure HTML/CSS/JS
-- **Optional Python launcher** - just for convenience (opens browser + fullscreen)
+**Hybrid Client-Server:**
+- **Frontend**: Pure HTML/CSS/JavaScript (no build step)
+- **Backend**: Python HTTP server (optional, for sync and serving)
+- **Storage**: File-based (EMDATA.txt) + browser localStorage fallback
+- **Encryption**: XOR encryption (server) + browser crypto (fallback)
 
 ### Testing Locally
 
-1. Open `src/index.html` in your browser
-2. Open DevTools (F12) → Console
-3. Monitor localStorage: `localStorage`
-4. View encrypted data: `localStorage.getItem('EMDATA')`
-5. View encryption key: `localStorage.getItem('ENCRYPTION_KEY')`
+**Test server:**
+```bash
+python3 LangFight.py
+# Visit http://localhost:9050
+```
+
+**Test encryption:**
+```bash
+python3 -c "from encryption_manager import EncryptionManager; \
+  em = EncryptionManager(); em.load_or_create_key(); \
+  print('Key:', em.key[:20] + '...')"
+```
+
+**Test endpoints:**
+```bash
+# Check server is running
+curl http://localhost:9050/server/load
+
+# Save test data
+curl -X POST http://localhost:9050/server/save \
+  -H "Content-Type: application/json" \
+  -d '{"level":5,"score":1000}'
+```
 
 ### Making Changes
 
 - **Edit vocabulary**: `src/vocabulary.js`
 - **Modify game logic**: `src/game.js`
-- **Change encryption**: `src/crypto.js`
-- **Update styles**: `src/style.css`
-- **No build required** - just refresh the browser!
+- **Change server**: `LangFight.py`
+- **Update encryption**: `encryption_manager.py` or `src/crypto.js`
+- **Modify styles**: `src/style.css`
+- **No build required** - just refresh browser!
+
+### Adding New Endpoints
+
+Edit `LangFight.py` to add custom server routes:
+```python
+# In the CustomHTTPRequestHandler class
+# Add to do_GET method for GET requests
+# Add to do_POST method for POST requests
+```
+
+## Security Notes
+
+- **Encryption key** stored in `.env` file - keep it safe!
+- **.gitignore** protects `.env` and `EMDATA.txt` from commits
+- Data encrypted before upload - server sees only ciphertext
+- XOR encryption is simple but effective for local use
+- **Export .env regularly** as backup (💾 Data → 🔑 Export .env)
+- If .env is lost, encrypted data cannot be recovered
+
+## Contributing
+
+Feel free to:
+- Add more vocabulary to `src/vocabulary.js`
+- Improve encryption in `encryption_manager.py`
+- Enhance UI in `src/style.css`
+- Fix bugs and submit pull requests
 
 ## License
 
-Educational project - feel free to modify and distribute.
+Educational project - MIT License
+Feel free to modify and distribute
 
 ## Credits
 
 Created with Claude Code
 Kannada language learning game
+Made with ❤️ for language learners
