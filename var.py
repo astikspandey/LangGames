@@ -5,8 +5,9 @@ Contains all URLs and configuration variables
 """
 
 # Server Configuration
-SERVER_HOST = "localhost"
-SERVER_PORT = 9048
+import os
+SERVER_HOST = os.getenv('HOST', 'localhost')
+SERVER_PORT = int(os.getenv('PORT', 9048))
 SERVER_URL = f"http://{SERVER_HOST}:{SERVER_PORT}"
 
 # API Endpoints
@@ -50,8 +51,7 @@ BASE_SPAWN_RATE = 3000  # milliseconds
 SRC_DIRECTORY = "src"
 STATIC_FILES = ["index.html", "game.js", "vocabulary.js", "crypto.js"]
 
-# Environment Variables
-import os
+# Environment Variables (os already imported above)
 SYNC_URL_ENV = os.getenv('SYNC_URL', DEFAULT_SYNC_URL)
 
 # Print configuration (for debugging)
