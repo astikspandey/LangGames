@@ -9,32 +9,32 @@ import sys
 import json
 import subprocess
 
-try:
-    from pynput.keyboard import Controller, Key
-except ImportError:
-    print("Installing required package: pynput")
-    import subprocess
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "pynput"])
-    from pynput.keyboard import Controller, Key
+USE_PYNPUT = os.getenv('DISABLE_PYNPUT', '0') != '1'
+Controller = None
+Key = None
+
+if USE_PYNPUT:
+    try:
+        from pynput.keyboard import Controller, Key
+    except ImportError:
+        # In headless/containerized environments this may fail or be undesirable
+        print("pynput not available; fullscreen auto-toggle disabled")
+        Controller = None
+        Key = None
+else:
+    print("pynput disabled by DISABLE_PYNPUT=1; fullscreen auto-toggle disabled")
 
 from encryption_manager import EncryptionManager
-from walkerauth_client import WalkerAuthClient
-import var  # Import configuration variables
 
-PORT = var.SERVER_PORT
-HOST = var.SERVER_HOST
+PORT = int(os.getenv('PORT', '9048'))
+HOST = os.getenv('HOST', '0.0.0.0')
 
 # Initialize encryption manager
 encryption_manager = EncryptionManager()
 encryption_manager.load_or_create_key()
 
-# Initialize WalkerAuth client
-# Secret key MUST match the one in WalkerAuth's sites.json for LangFight
-WALKERAUTH_SECRET_KEY = "langfight_secret_key_12345"
-walkerauth = WalkerAuthClient(WALKERAUTH_SECRET_KEY)
-
 # Sync settings file
-SYNC_SETTINGS_FILE = var.SYNC_SETTINGS_FILE
+SYNC_SETTINGS_FILE = "sync_settings.json"
 
 def load_sync_settings():
     """Load sync settings from file"""
@@ -79,83 +79,6 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        # Handle OAuth success redirect
-        if self.path.startswith('/auth/success'):
-            # Extract token from query string
-            from urllib.parse import urlparse, parse_qs
-            parsed = urlparse(self.path)
-            params = parse_qs(parsed.query)
-            token = params.get('token', [None])[0]
-
-            if token:
-                # Verify token and get user data
-                user_data = walkerauth.verify_session(token)
-
-                if user_data:
-                    # Return HTML that stores token and redirects to game
-                    self.send_response(200)
-                    self.send_header('Content-type', 'text/html')
-                    self.end_headers()
-
-                    html = f"""
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <title>Authentication Successful</title>
-                        <style>
-                            body {{
-                                font-family: Arial, sans-serif;
-                                display: flex;
-                                justify-content: center;
-                                align-items: center;
-                                height: 100vh;
-                                margin: 0;
-                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                                color: white;
-                            }}
-                            .container {{
-                                text-align: center;
-                                background: rgba(255,255,255,0.1);
-                                padding: 40px;
-                                border-radius: 10px;
-                                backdrop-filter: blur(10px);
-                            }}
-                            h1 {{ margin: 0 0 20px 0; }}
-                            p {{ font-size: 18px; }}
-                        </style>
-                    </head>
-                    <body>
-                        <div class="container">
-                            <h1>✓ Authentication Successful!</h1>
-                            <p>Welcome, {user_data.get('username')}!</p>
-                            <p>Redirecting to LangFight...</p>
-                        </div>
-                        <script>
-                            // Store auth token in localStorage
-                            localStorage.setItem('walkerauth_token', '{token}');
-                            localStorage.setItem('user_email', '{user_data.get('email')}');
-                            localStorage.setItem('user_name', '{user_data.get('username')}');
-                            localStorage.setItem('user_avatar', '{user_data.get('profilePictureUrl', '')}');
-
-                            // Redirect to game after 2 seconds
-                            setTimeout(() => {{
-                                window.location.href = '/';
-                            }}, 2000);
-                        </script>
-                    </body>
-                    </html>
-                    """
-
-                    self.wfile.write(html.encode())
-                    return
-
-            # Token invalid or missing
-            self.send_response(400)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            self.wfile.write(b"<h1>Authentication Failed</h1><p>Invalid or expired token</p>")
-            return
-
         # Handle API endpoints
         if self.path == '/api/sync/settings':
             # Get sync settings
@@ -202,57 +125,6 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode())
-            return
-
-        # Handle WalkerAuth OAuth callback
-        elif self.path == '/oauth/callback':
-            try:
-                data = json.loads(post_data.decode())
-
-                encrypted = data.get('encrypted')
-                iv = data.get('iv')
-                site_id = data.get('siteId')
-
-                print(f"\n📝 Received OAuth callback from {site_id}")
-
-                # Decrypt user data from WalkerAuth
-                user_data = walkerauth.decrypt_user_data(encrypted, iv)
-
-                if not user_data:
-                    self.send_response(400)
-                    self.send_header('Content-type', 'application/json')
-                    self.end_headers()
-                    self.wfile.write(json.dumps({
-                        "success": False,
-                        "error": "Failed to decrypt user data"
-                    }).encode())
-                    return
-
-                print(f"✓ Authenticated user: {user_data.get('username')} ({user_data.get('email')})")
-
-                # Generate session token
-                token = walkerauth.generate_session_token(user_data)
-
-                # Return success with token
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({
-                    "success": True,
-                    "token": token
-                }).encode())
-
-                print(f"✓ Session token generated: {token[:16]}...")
-
-            except Exception as e:
-                print(f"✗ OAuth callback error: {e}")
-                self.send_response(500)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({
-                    "success": False,
-                    "error": str(e)
-                }).encode())
             return
 
         # Handle save data request
@@ -325,7 +197,9 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             print(f"✗ Sync error: {e}")
 
 def press_asterisk():
-    """Wait 0.6 seconds and press the * key"""
+    """Wait 0.6 seconds and press the * key if supported"""
+    if Controller is None:
+        return
     time.sleep(0.6)
     keyboard = Controller()
     keyboard.press('*')
@@ -360,17 +234,21 @@ def start_server():
         print("  ✓ Encrypted data storage (EMDATA.txt)")
         print("  ✓ Automatic cloud sync (when enabled)")
         print("  ✓ Export/Import save files")
+        if Controller is None:
+            print("  ℹ Fullscreen auto-toggle disabled")
         print("")
         print("Press Ctrl+C to stop the server")
         print("=" * 60)
         print("")
 
-        # Open browser
-        webbrowser.open(url)
+        # Open browser only if binding to localhost
+        if HOST in ("127.0.0.1", "localhost"):
+            webbrowser.open(url)
 
-        # Start thread to press * after delay
-        asterisk_thread = threading.Thread(target=press_asterisk, daemon=True)
-        asterisk_thread.start()
+        # Start thread to press * after delay (only if supported)
+        if Controller is not None:
+            asterisk_thread = threading.Thread(target=press_asterisk, daemon=True)
+            asterisk_thread.start()
 
         # Start server
         try:

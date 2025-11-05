@@ -1,75 +1,14 @@
 // ============================================================
 // CONFIGURATION - Easy to modify
 // ============================================================
-const SERVER_PORT = 9048;  // Must match var.py SERVER_PORT
+const SERVER_PORT = 9050;  // Change this to match your server port
 const SERVER_URL = `http://localhost:${SERVER_PORT}`;
 // ============================================================
 
-// Trial mode removed - infinite levels available
-const isTrialMode = false;
-const TRIAL_MAX_LEVEL = 999; // No limit
-
-// Auth configuration (WalkerAuth - to be configured)
-const AUTH_CONFIG = {
-    enabled: false, // Set to true when WalkerAuth is configured
-    walkerAuthUrl: '', // WalkerAuth server URL (to be provided)
-    pastebinUrl: '' // Pastebin server URL for data storage (to be provided)
-};
-
-// Auth module - WalkerAuth integration (placeholder)
-const AuthManager = {
-    currentUser: null,
-    authToken: null,
-
-    async login() {
-        if (!AUTH_CONFIG.enabled) {
-            console.log('Auth not enabled - skipping login');
-            return true;
-        }
-
-        // TODO: Implement WalkerAuth login flow
-        // This will be configured when WalkerAuth URL is provided
-        console.log('WalkerAuth login placeholder - to be implemented');
-        return false;
-    },
-
-    async logout() {
-        this.currentUser = null;
-        this.authToken = null;
-        console.log('User logged out');
-    },
-
-    isAuthenticated() {
-        return AUTH_CONFIG.enabled ? this.authToken !== null : true;
-    }
-};
-
-// Pastebin integration (placeholder)
-const PastebinManager = {
-    async saveToCloud(data) {
-        if (!AUTH_CONFIG.enabled || !AUTH_CONFIG.pastebinUrl) {
-            console.log('Pastebin not configured - using local storage');
-            return false;
-        }
-
-        // TODO: Implement pastebin save
-        // This will be configured when pastebin URL is provided
-        console.log('Pastebin save placeholder - to be implemented');
-        return false;
-    },
-
-    async loadFromCloud() {
-        if (!AUTH_CONFIG.enabled || !AUTH_CONFIG.pastebinUrl) {
-            console.log('Pastebin not configured - using local storage');
-            return null;
-        }
-
-        // TODO: Implement pastebin load
-        // This will be configured when pastebin URL is provided
-        console.log('Pastebin load placeholder - to be implemented');
-        return null;
-    }
-};
+// Check if running in trial mode (default to trial unless 'full=true' in URL)
+const urlParams = new URLSearchParams(window.location.search);
+const isTrialMode = urlParams.get('full') !== 'true';
+const TRIAL_MAX_LEVEL = 6;
 
 // Data persistence module (server + fallback to browser)
 const DataManager = {
@@ -210,7 +149,8 @@ const game = {
     savedLevel: 1, // Level to return to if player loses immediately after skip
     hasPlayedCurrentLevel: false, // Track if player has played current level
     particles: [], // Visual feedback particles
-    audioContext: null // Audio context for sound effects
+    audioContext: null, // Audio context for sound effects
+    isTrialMode: isTrialMode // Track if in trial mode
 };
 
 // Path waypoints based on the map image
@@ -505,17 +445,19 @@ async function initGame() {
 
     initAudio();
 
-    // Load saved data if available
+    // Load saved data if available (only in full version)
     let hasRestoredData = false;
-    const savedData = await DataManager.loadGameData();
-    if (savedData && savedData.level) {
-        console.log('✓ Previous save found - continuing from level', savedData.level);
+    if (!game.isTrialMode) {
+        const savedData = await DataManager.loadGameData();
+        if (savedData && savedData.level) {
+            console.log('✓ Previous save found - continuing from level', savedData.level);
 
-        // Restore game state
-        game.level = savedData.level || 1;
-        game.score = savedData.score || 0;
-        game.savedLevel = savedData.level || 1;
-        hasRestoredData = true;
+            // Restore game state
+            game.level = savedData.level || 1;
+            game.score = savedData.score || 0;
+            game.savedLevel = savedData.level || 1;
+            hasRestoredData = true;
+        }
     }
 
     resetGame(hasRestoredData); // Pass true to skip level/score reset if restoring
@@ -531,13 +473,17 @@ async function initGame() {
         }, 300);
     }
 
-    // Start auto-save
-    DataManager.startAutoSave();
+    // Start auto-save (only in full version)
+    if (!game.isTrialMode) {
+        DataManager.startAutoSave();
+    }
 
     // Save on window close
-    window.addEventListener('beforeunload', () => {
-        DataManager.saveGameData();
-    });
+    if (!game.isTrialMode) {
+        window.addEventListener('beforeunload', () => {
+            DataManager.saveGameData();
+        });
+    }
 }
 
 // Reset game state
@@ -757,6 +703,12 @@ function handleCorrectMatch(tank, english) {
 
 // Level up
 function levelUp() {
+    // Check if in trial mode and trying to go beyond level 6
+    if (game.isTrialMode && game.level >= TRIAL_MAX_LEVEL) {
+        showDownloadScreen();
+        return;
+    }
+
     game.level++;
     game.matchedCounts = {};
     game.fullyMatchedItems.clear();
@@ -810,9 +762,11 @@ function gameOver() {
         game.level = game.savedLevel;
     }
 
-    // Save game data and update stats
-    DataManager.updateStats();
-    DataManager.saveGameData();
+    // Save game data and update stats (only in full version)
+    if (!game.isTrialMode) {
+        DataManager.updateStats();
+        DataManager.saveGameData();
+    }
 
     document.getElementById('finalScore').textContent = game.score;
     document.getElementById('finalLevel').textContent = game.level;
@@ -1019,12 +973,18 @@ function setSpeed() {
 
 // Skip to level function
 function skipToLevel() {
-    const levelInput = prompt('Enter level to skip to (current: ' + game.level + ', max: unlimited):', game.level);
+    const maxLevel = game.isTrialMode ? TRIAL_MAX_LEVEL : 999;
+    const levelInput = prompt('Enter level to skip to (current: ' + game.level + ', max: ' + (game.isTrialMode ? TRIAL_MAX_LEVEL + ' [Trial]' : 'unlimited') + '):', game.level);
 
     if (levelInput !== null) {
         const targetLevel = parseInt(levelInput);
 
         if (!isNaN(targetLevel) && targetLevel >= 1) {
+            // Check trial mode limit
+            if (game.isTrialMode && targetLevel > TRIAL_MAX_LEVEL) {
+                showDownloadScreen();
+                return;
+            }
 
             // Don't save if skipping to same or lower level
             if (targetLevel > game.savedLevel) {
@@ -1124,6 +1084,36 @@ function cpuPlayTurn() {
     }
 }
 
+// Download screen functions
+function showDownloadScreen() {
+    game.isGameOver = true;
+    clearInterval(game.spawnInterval);
+    stopCPUMode();
+    document.getElementById('downloadScreen').style.display = 'flex';
+}
+
+function hideDownloadScreen() {
+    document.getElementById('downloadScreen').style.display = 'none';
+    game.isGameOver = false;
+}
+
+function handleDownload() {
+    // Create download link for full version
+    const downloadUrl = window.location.origin + window.location.pathname + '?full=true';
+    alert('Full Version URL:\n\n' + downloadUrl + '\n\nBookmark this URL to access the full version!\n\nFor desktop app, run: python3 LangFight.py');
+}
+
+function continueTrial() {
+    hideDownloadScreen();
+    // Reset to level 1 and restart
+    game.level = 1;
+    game.savedLevel = 1;
+    resetGame();
+    initializeDraggableItems();
+    startSpawning();
+    gameLoop();
+}
+
 // Setup event listeners
 function setupEventListeners() {
     document.getElementById('restartBtn').addEventListener('click', () => {
@@ -1186,6 +1176,10 @@ function setupEventListeners() {
             game.draggedElement = null;
         }
     });
+
+    // Download screen buttons
+    document.getElementById('downloadBtn').addEventListener('click', handleDownload);
+    document.getElementById('continueTrialBtn').addEventListener('click', continueTrial);
 
     // Data menu buttons
     document.getElementById('dataMenuBtn').addEventListener('click', () => {

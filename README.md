@@ -416,3 +416,41 @@ Feel free to modify and distribute
 Created with Claude Code
 Kannada language learning game
 Made with ❤️ for language learners
+
+## Docker Deployment
+
+To run LangFight in a Docker container, follow these steps:
+
+1.  **Build the Docker Image**
+
+    Navigate to the root directory of the LangFight project (where `Dockerfile` is located) and run the following command to build the Docker image:
+
+    ```bash
+    docker build -t langfight .
+    ```
+
+    This command builds an image named `langfight` from your `Dockerfile`.
+
+2.  **Run the Docker Container**
+
+    Once the image is built, you can run the application in a Docker container using the following command:
+
+    ```bash
+    docker run -p 9048:9048 langfight
+    ```
+
+    -   `-p 9048:9048`: This maps port 9048 on your host machine to port 9048 inside the Docker container. LangFight runs on port 9048 by default.
+
+    After running the container, you can access the game in your web browser at `http://localhost:9048`.
+
+3.  **Accessing Game Data (Optional)**
+
+    The game generates an encryption key in `.env` and stores save data in `EMDATA.txt`. By default, these files are created inside the container, meaning they will be lost if the container is removed. To persist this data, you can mount a volume:
+
+    ```bash
+    docker run -p 9048:9048 -v $(pwd)/data:/app langfight
+    ```
+
+    This command mounts a local directory named `data` (which will be created in your current directory if it doesn't exist) to the `/app` directory inside the container. This way, `.env` and `EMDATA.txt` will be stored in your local `data` directory.
+
+> Note: In Docker, fullscreen auto-toggle is disabled. The container sets `DISABLE_PYNPUT=1`, so the "press * automatically" feature is skipped. You can still press `*` manually in the browser to toggle fullscreen.
