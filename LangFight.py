@@ -1,13 +1,50 @@
 #!/usr/bin/env python3
+import os
+import sys
+import subprocess
+
+# Check if running in virtual environment
+def is_venv():
+    return hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix)
+
+# Setup virtual environment if needed
+def setup_venv():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    venv_dir = os.path.join(script_dir, 'venv')
+
+    if not is_venv():
+        print("Setting up virtual environment...")
+
+        # Create venv if it doesn't exist
+        if not os.path.exists(venv_dir):
+            print("Creating virtual environment...")
+            subprocess.run([sys.executable, '-m', 'venv', venv_dir], check=True)
+
+        # Determine venv python path
+        if sys.platform == 'win32':
+            venv_python = os.path.join(venv_dir, 'Scripts', 'python.exe')
+        else:
+            venv_python = os.path.join(venv_dir, 'bin', 'python3')
+
+        # Install dependencies
+        print("Installing dependencies...")
+        requirements = ['pycryptodome', 'requests']
+        subprocess.run([venv_python, '-m', 'pip', 'install', '--quiet'] + requirements, check=True)
+
+        # Re-execute script in venv
+        print("Restarting in virtual environment...\n")
+        os.execv(venv_python, [venv_python] + sys.argv)
+
+# Run venv setup before any other imports
+if __name__ == "__main__":
+    setup_venv()
+
 import http.server
 import socketserver
 import webbrowser
 import time
 import threading
-import os
-import sys
 import json
-import subprocess
 
 USE_PYNPUT = os.getenv('DISABLE_PYNPUT', '0') != '1'
 Controller = None
