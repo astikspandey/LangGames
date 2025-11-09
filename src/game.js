@@ -1,7 +1,7 @@
 // ============================================================
 // CONFIGURATION - Easy to modify
 // ============================================================
-const SERVER_PORT = 9050;  // Change this to match your server port
+const SERVER_PORT = 9048;  // Change this to match your server port
 const SERVER_URL = `http://localhost:${SERVER_PORT}`;
 // ============================================================
 
