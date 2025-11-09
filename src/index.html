@@ -35,11 +35,14 @@
                     <span id="cpuStatus" class="cpu-status"></span>
                 </div>
                 <div class="speed-control">
-                    <button id="speedBtn" class="speed-btn">Speed</button>
+                    <label for="speedSlider" class="slider-label">Speed:</label>
+                    <input type="range" id="speedSlider" min="1" max="5" step="0.5" value="1" class="slider">
                     <span id="speedStatus" class="speed-status">1x</span>
                 </div>
                 <div class="level-control">
-                    <button id="levelSkipBtn" class="level-skip-btn">Skip Level</button>
+                    <label for="levelSlider" class="slider-label">Level:</label>
+                    <input type="range" id="levelSlider" min="1" max="20" value="1" class="slider">
+                    <span id="levelStatus" class="level-status">1</span>
                 </div>
                 <div class="data-control">
                     <button id="dataMenuBtn" class="data-menu-btn">💾 Data</button>
@@ -103,24 +106,6 @@
             </div>
         </div>
 
-        <div class="download-screen" id="downloadScreen" style="display: none;">
-            <div class="download-content">
-                <h2>Trial Version Complete!</h2>
-                <p class="download-message">You've reached the end of the free trial!</p>
-                <p class="download-info">Level 6+ is available in the full version.</p>
-                <div class="download-benefits">
-                    <h3>Full Version Features:</h3>
-                    <ul>
-                        <li>Unlimited levels with advanced sentences</li>
-                        <li>Save your progress with encrypted data</li>
-                        <li>Offline play - no internet required</li>
-                        <li>Sync progress across devices</li>
-                    </ul>
-                </div>
-                <button id="downloadBtn" class="download-btn">Download Full Version</button>
-                <button id="continueTrialBtn" class="continue-btn">Continue Trial (Level 1-6)</button>
-            </div>
-        </div>
     </div>
 
     <script src="vocabulary.js"></script>

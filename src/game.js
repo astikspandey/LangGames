@@ -5,11 +5,6 @@ const SERVER_PORT = 9050;  // Change this to match your server port
 const SERVER_URL = `http://localhost:${SERVER_PORT}`;
 // ============================================================
 
-// Check if running in trial mode (default to trial unless 'full=true' in URL)
-const urlParams = new URLSearchParams(window.location.search);
-const isTrialMode = urlParams.get('full') !== 'true';
-const TRIAL_MAX_LEVEL = 6;
-
 // Data persistence module (server + fallback to browser)
 const DataManager = {
     apiUrl: `${SERVER_URL}/api`,
@@ -149,8 +144,7 @@ const game = {
     savedLevel: 1, // Level to return to if player loses immediately after skip
     hasPlayedCurrentLevel: false, // Track if player has played current level
     particles: [], // Visual feedback particles
-    audioContext: null, // Audio context for sound effects
-    isTrialMode: isTrialMode // Track if in trial mode
+    audioContext: null // Audio context for sound effects
 };
 
 // Path waypoints based on the map image
@@ -192,6 +186,7 @@ class Tank {
         this.color = this.getColor();
         this.progress = 0;
         this.spawnTime = Date.now(); // Track when tank was spawned
+        this.showHint = false; // Track if hint should be shown
     }
 
     getSpeed() {
@@ -253,6 +248,12 @@ class Tank {
     }
 
     draw(ctx) {
+        // Check if 1.5 seconds have passed since spawn
+        const timeSinceSpawn = Date.now() - this.spawnTime;
+        if (timeSinceSpawn >= 1500) {
+            this.showHint = true;
+        }
+
         // Draw vehicle body
         ctx.fillStyle = this.color;
         ctx.fillRect(
@@ -299,6 +300,19 @@ class Tank {
         const text = this.vocabulary.english;
 
         ctx.fillText(text, this.x, this.y, maxWidth);
+
+        // Draw hint (Kannada text) after 1.5 seconds
+        if (this.showHint) {
+            ctx.fillStyle = '#FFD700';
+            ctx.font = 'bold 16px Arial';
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+
+            // Draw hint above the vehicle
+            const hintY = this.y - this.size.height / 2 - 15;
+            ctx.strokeText(this.vocabulary.kannada, this.x, hintY);
+            ctx.fillText(this.vocabulary.kannada, this.x, hintY);
+        }
     }
 }
 
@@ -445,19 +459,17 @@ async function initGame() {
 
     initAudio();
 
-    // Load saved data if available (only in full version)
+    // Load saved data if available
     let hasRestoredData = false;
-    if (!game.isTrialMode) {
-        const savedData = await DataManager.loadGameData();
-        if (savedData && savedData.level) {
-            console.log('✓ Previous save found - continuing from level', savedData.level);
+    const savedData = await DataManager.loadGameData();
+    if (savedData && savedData.level) {
+        console.log('✓ Previous save found - continuing from level', savedData.level);
 
-            // Restore game state
-            game.level = savedData.level || 1;
-            game.score = savedData.score || 0;
-            game.savedLevel = savedData.level || 1;
-            hasRestoredData = true;
-        }
+        // Restore game state
+        game.level = savedData.level || 1;
+        game.score = savedData.score || 0;
+        game.savedLevel = savedData.level || 1;
+        hasRestoredData = true;
     }
 
     resetGame(hasRestoredData); // Pass true to skip level/score reset if restoring
@@ -473,17 +485,13 @@ async function initGame() {
         }, 300);
     }
 
-    // Start auto-save (only in full version)
-    if (!game.isTrialMode) {
-        DataManager.startAutoSave();
-    }
+    // Start auto-save
+    DataManager.startAutoSave();
 
     // Save on window close
-    if (!game.isTrialMode) {
-        window.addEventListener('beforeunload', () => {
-            DataManager.saveGameData();
-        });
-    }
+    window.addEventListener('beforeunload', () => {
+        DataManager.saveGameData();
+    });
 }
 
 // Reset game state
@@ -703,12 +711,6 @@ function handleCorrectMatch(tank, english) {
 
 // Level up
 function levelUp() {
-    // Check if in trial mode and trying to go beyond level 6
-    if (game.isTrialMode && game.level >= TRIAL_MAX_LEVEL) {
-        showDownloadScreen();
-        return;
-    }
-
     game.level++;
     game.matchedCounts = {};
     game.fullyMatchedItems.clear();
@@ -762,11 +764,9 @@ function gameOver() {
         game.level = game.savedLevel;
     }
 
-    // Save game data and update stats (only in full version)
-    if (!game.isTrialMode) {
-        DataManager.updateStats();
-        DataManager.saveGameData();
-    }
+    // Save game data and update stats
+    DataManager.updateStats();
+    DataManager.saveGameData();
 
     document.getElementById('finalScore').textContent = game.score;
     document.getElementById('finalLevel').textContent = game.level;
@@ -862,6 +862,13 @@ function updateUI() {
 
     const heartsDisplay = '❤️'.repeat(Math.max(0, game.lives));
     document.getElementById('lives').textContent = heartsDisplay || '💀';
+
+    // Update sliders
+    const levelSlider = document.getElementById('levelSlider');
+    if (levelSlider) {
+        levelSlider.value = game.level;
+        document.getElementById('levelStatus').textContent = game.level;
+    }
 }
 
 // Draw the path
@@ -951,66 +958,43 @@ function toggleFullscreen() {
 }
 
 // Speed control function
-function setSpeed() {
-    const speedInput = prompt('Enter speed multiplier (minimum 1):', game.speedMultiplier);
+function setSpeed(speed) {
+    if (!isNaN(speed) && speed >= 1) {
+        game.speedMultiplier = speed;
+        document.getElementById('speedStatus').textContent = speed + 'x';
 
-    if (speedInput !== null) {
-        const speed = parseFloat(speedInput);
-
-        if (!isNaN(speed) && speed >= 1) {
-            game.speedMultiplier = speed;
-            document.getElementById('speedStatus').textContent = speed + 'x';
-
-            // Restart spawning with new speed
-            if (!game.isGameOver) {
-                startSpawning();
-            }
-        } else {
-            alert('Please enter a number greater than or equal to 1!');
+        // Restart spawning with new speed
+        if (!game.isGameOver) {
+            startSpawning();
         }
     }
 }
 
 // Skip to level function
-function skipToLevel() {
-    const maxLevel = game.isTrialMode ? TRIAL_MAX_LEVEL : 999;
-    const levelInput = prompt('Enter level to skip to (current: ' + game.level + ', max: ' + (game.isTrialMode ? TRIAL_MAX_LEVEL + ' [Trial]' : 'unlimited') + '):', game.level);
+function skipToLevel(targetLevel) {
+    if (!isNaN(targetLevel) && targetLevel >= 1) {
+        // Don't save if skipping to same or lower level
+        if (targetLevel > game.savedLevel) {
+            // Only update saved level if not skipping
+            game.savedLevel = game.level;
+        }
 
-    if (levelInput !== null) {
-        const targetLevel = parseInt(levelInput);
+        game.level = targetLevel;
+        game.hasPlayedCurrentLevel = false;
+        game.matchedCounts = {};
+        game.fullyMatchedItems.clear();
+        game.tanks = [];
+        game.activeTanks = [];
+        game.lives = 3;
 
-        if (!isNaN(targetLevel) && targetLevel >= 1) {
-            // Check trial mode limit
-            if (game.isTrialMode && targetLevel > TRIAL_MAX_LEVEL) {
-                showDownloadScreen();
-                return;
-            }
+        // Load new vocabulary for target level
+        initializeDraggableItems();
 
-            // Don't save if skipping to same or lower level
-            if (targetLevel > game.savedLevel) {
-                // Only update saved level if not skipping
-                game.savedLevel = game.level;
-            }
+        updateUI();
 
-            game.level = targetLevel;
-            game.hasPlayedCurrentLevel = false;
-            game.matchedCounts = {};
-            game.fullyMatchedItems.clear();
-            game.tanks = [];
-            game.activeTanks = [];
-            game.lives = 3;
-
-            // Load new vocabulary for target level
-            initializeDraggableItems();
-
-            updateUI();
-
-            // Restart spawning if game is active
-            if (!game.isGameOver) {
-                startSpawning();
-            }
-        } else {
-            alert('Please enter a valid level number!');
+        // Restart spawning if game is active
+        if (!game.isGameOver) {
+            startSpawning();
         }
     }
 }
@@ -1084,36 +1068,6 @@ function cpuPlayTurn() {
     }
 }
 
-// Download screen functions
-function showDownloadScreen() {
-    game.isGameOver = true;
-    clearInterval(game.spawnInterval);
-    stopCPUMode();
-    document.getElementById('downloadScreen').style.display = 'flex';
-}
-
-function hideDownloadScreen() {
-    document.getElementById('downloadScreen').style.display = 'none';
-    game.isGameOver = false;
-}
-
-function handleDownload() {
-    // Create download link for full version
-    const downloadUrl = window.location.origin + window.location.pathname + '?full=true';
-    alert('Full Version URL:\n\n' + downloadUrl + '\n\nBookmark this URL to access the full version!\n\nFor desktop app, run: python3 LangGames.py');
-}
-
-function continueTrial() {
-    hideDownloadScreen();
-    // Reset to level 1 and restart
-    game.level = 1;
-    game.savedLevel = 1;
-    resetGame();
-    initializeDraggableItems();
-    startSpawning();
-    gameLoop();
-}
-
 // Setup event listeners
 function setupEventListeners() {
     document.getElementById('restartBtn').addEventListener('click', () => {
@@ -1126,11 +1080,22 @@ function setupEventListeners() {
     // CPU button
     document.getElementById('cpuBtn').addEventListener('click', toggleCPU);
 
-    // Speed button
-    document.getElementById('speedBtn').addEventListener('click', setSpeed);
+    // Speed slider
+    document.getElementById('speedSlider').addEventListener('input', (e) => {
+        const speed = parseFloat(e.target.value);
+        setSpeed(speed);
+    });
 
-    // Level skip button
-    document.getElementById('levelSkipBtn').addEventListener('click', skipToLevel);
+    // Level slider
+    document.getElementById('levelSlider').addEventListener('input', (e) => {
+        const level = parseInt(e.target.value);
+        document.getElementById('levelStatus').textContent = level;
+    });
+
+    document.getElementById('levelSlider').addEventListener('change', (e) => {
+        const level = parseInt(e.target.value);
+        skipToLevel(level);
+    });
 
     // Listen for * key to toggle fullscreen
     document.addEventListener('keydown', (event) => {
@@ -1176,10 +1141,6 @@ function setupEventListeners() {
             game.draggedElement = null;
         }
     });
-
-    // Download screen buttons
-    document.getElementById('downloadBtn').addEventListener('click', handleDownload);
-    document.getElementById('continueTrialBtn').addEventListener('click', continueTrial);
 
     // Data menu buttons
     document.getElementById('dataMenuBtn').addEventListener('click', () => {
