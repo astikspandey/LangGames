@@ -1,8 +1,8 @@
 // ============================================================
 // CONFIGURATION - Easy to modify
 // ============================================================
-const SERVER_PORT = 9048;  // Change this to match your server port
-const SERVER_URL = `http://localhost:${SERVER_PORT}`;
+// Use current domain (works for both localhost and production)
+const SERVER_URL = window.location.origin;
 // ============================================================
 
 // Data persistence module (server + fallback to browser)
