@@ -1273,14 +1273,14 @@ function initAuth() {
             userAvatarEl.style.display = 'none';
         }
     } else {
-        // User is not logged in
-        loginBtn.style.display = 'block';
-        userProfile.style.display = 'none';
+        // User is not logged in - redirect to WalkerAuth
+        window.location.href = 'https://walkerauth.walkerco.co/?id=LangGames&presync=1';
+        return;
     }
 
-    // Login button handler
+    // Login button handler (in case user manually logs out and needs to log in again)
     loginBtn.addEventListener('click', () => {
-        window.location.href = 'https://walkerauth.walkerco.co?id=LangGames';
+        window.location.href = 'https://walkerauth.walkerco.co/?id=LangGames&presync=1';
     });
 
     // Logout button handler
