@@ -1,456 +1,469 @@
-# LangGames - Kannada Learning Game
+# LangFight - Kannada Learning Game
 
-An interactive educational game to learn Kannada vocabulary through drag-and-drop gameplay with particle effects and audio feedback.
+An interactive educational game to learn Kannada vocabulary through click-to-match gameplay with particle effects and audio feedback.
 
 ## ✨ Key Features
 
-- **🎮 Web Trial + Local Full Version** - Try 6 levels online, download for unlimited access
-- **🔒 Encrypted Storage** - XOR encryption with custom keys (EMDATA.txt + .env)
-- **💾 Auto-Save/Load** - Progress automatically saved and restored
-- **☁️ Auto-Sync** - Optional automatic cloud backup (enabled by default to local server)
+- **🎮 Click-to-Match Gameplay** - Simple one-click matching system
+- **💾 Cloud Auto-Save** - Progress automatically saved to Supabase
+- **☁️ Cross-Device Sync** - Play on any device with your account
 - **🎵 Audio & Visual Feedback** - Particle explosions and sound effects
-- **📥 Export/Import** - Backup and restore your encrypted save files
-- **📱 Offline Full Version** - Run locally without internet
+- **🔐 WalkerAuth Integration** - Secure authentication and user profiles
+- **📚 Progressive Learning** - First 3 levels designed for beginners
+- **🎓 Interactive Tutorial** - Guides new players through game mechanics
+- **📱 Web-Based** - No installation required
 
-## Game Mechanics
+## 🎮 How to Play
 
-### Visual & Audio Feedback
-- **✅ Correct matches**: Green particle explosion + ascending chime
-- **❌ Wrong matches**: Red X indicator + descending error tone
-- **Real-time feedback**: Immediate response to every action
+### Click-to-Match System
+1. **Click a Kannada word** from the sidebar
+2. It **automatically matches with the FIRST vehicle** on the path (the one furthest along)
+3. **Correct match** → Vehicle destroyed, points earned! ✅
+4. **Wrong match** → Lose a life ❌
+5. Match all vehicles before they reach the end of the path!
 
-### Progressive Difficulty
-- **Levels 1-2**: Letters (ಅ, ಇ, ಉ, etc.)
-- **Levels 3-5**: Words (Water, Food, House, etc.)
-- **Levels 6+**: Sentences (How are you?, Thank you, etc.)
+### Learning Progression
 
-### Multiple Vehicle Types
-- 🟢 **Green SUVs** (fast) - Letters
-- 🟠 **Orange Tanks** (medium) - Words
-- 🟣 **Purple Blimps** (slow) - Sentences
+**First 3 Levels (Learning Mode):**
+- **Much slower vehicles** - More time to think and learn
+- **Longer spawn delays** - One vehicle at a time to reduce pressure
+- **Level 1**: Base speed 0.3, spawns every 5 seconds
+- **Level 2**: Base speed 0.5, spawns every 4 seconds
+- **Level 3**: Base speed 0.7, spawns every 3.5 seconds
 
-## Features
+**Level 4+:**
+- Normal difficulty with progressive speed increases
+- Faster spawn rates for more challenge
 
-### Full Desktop Version (GitHub Clone)
-When you run `python3 LangGames.py`, you get:
-- **Unlimited Levels** - Access all content (letters, words, sentences)
-- **Encrypted Data Storage** - EMDATA.txt with custom KEY in .env
-- **Auto-Save** - Saves every 30 seconds + on browser close
-- **Auto-Load** - Restores progress with "Welcome Back!" message
-- **Auto-Sync** - Syncs to local server automatically (configurable)
-- **Persistent Stats** - High scores, games played, total score
-- **Export/Import** - Backup encrypted save files
-- **Browser Fallback** - Works offline with browser localStorage
+### Vehicle Types & Content
 
-## Installation & Running
+The game adapts vehicle types based on vocabulary difficulty:
+
+- 🟢 **Green SUV** (Fast) - Letters (ಅ, ಇ, ಉ, etc.)
+- 🟠 **Orange Tank** (Medium) - Words (Water, Food, House, etc.)
+- 🟣 **Purple Blimp** (Slow) - Sentences (How are you?, Thank you, etc.)
+
+### Interactive Tutorial
+
+For new users (no saved data), an interactive 4-step tutorial appears:
+1. **How to Play** - Click-to-match mechanics
+2. **Vehicle Types** - Learn about SUVs, Tanks, and Blimps
+3. **Controls** - Speed/level sliders and lives system
+4. **Tips** - Hover hints, auto-save, and keyboard shortcuts
+
+**Tutorial Features:**
+- Fully skippable at any time
+- Navigate with Previous/Next buttons
+- Progress dots show current step
+- Only shows once per browser (stores in localStorage)
+- Game pauses during tutorial
+
+## 🎛️ Game Controls
+
+### Main Controls
+- **Click Word** - Click any Kannada word to match it with the first vehicle
+- **Speed Slider** - Adjust game speed from 1x to 5x
+- **Level Slider** - Jump to any level (1-20)
+- **Lives** - You have 3 hearts ❤️❤️❤️
+
+### Advanced Features
+- **CPU Mode** - Auto-play mode (Password: `abc123`)
+- **Fullscreen** - Press `*` key to toggle fullscreen
+- **Hover Hints** - Hover over Kannada words for 0.5s to see English translation
+
+### Visual Feedback
+- **✅ Correct match**: Green particle explosion + happy chime
+- **❌ Wrong match**: Red X + error sound
+- **✓ Matched words**: Turn green when all instances destroyed
+- **Selected word**: Glows golden (if implemented for future features)
+
+## 📊 Game Progression
+
+### Lives System
+- Start with **3 hearts** ❤️❤️❤️
+- Lose a life for:
+  - Wrong word match
+  - Vehicle reaches the end (missed)
+- Game over when all lives lost
+
+### Scoring
+- **Points per match**: 10 × current level
+- **Level up**: When all vocabulary items fully matched
+- **Stats tracked**:
+  - Current score
+  - High score
+  - Total games played
+  - Total score across all games
+  - Levels completed
+
+### Game Over Screen
+Shows detailed feedback:
+- Final score and level reached
+- **Wrong Matches**: Lists what you tried vs. what was correct
+- **Missed Vehicles**: Shows vehicles that reached the end
+- Restart button to play again
+
+## 💾 Data & Authentication
+
+### Cloud Storage with Supabase
+
+**Automatic Saving:**
+- Saves every **30 seconds** during gameplay
+- Saves when browser closes/tab closes
+- Saves on game over
+- No manual save needed!
+
+**Data Stored:**
+- Current level and score
+- High score
+- Games played counter
+- Total score across all games
+- Stats (levels completed, etc.)
+- Last played timestamp
+
+**Welcome Back System:**
+- Loads your progress automatically on startup
+- Shows "Welcome Back! Level X • Score: Y" for 2 seconds
+- Returns you to your last level
+
+### WalkerAuth Integration
+
+**Authentication Features:**
+- Sign in with WalkerAuth (walkerauth.walkerco.co)
+- User profile displayed (avatar + name)
+- Logout button in header
+- Auto-login on return visits
+- Data linked to your account
+
+**First-Time Users:**
+- Tutorial appears automatically
+- Can skip tutorial anytime
+- No data loaded (fresh start)
+
+**Returning Users:**
+- No tutorial (already completed)
+- Progress loaded from Supabase
+- Welcome back message shown
+
+## 🚀 Installation & Running
 
 ### Requirements
 - Python 3.7+
 - Modern web browser (Chrome, Firefox, Safari, Edge)
+- Supabase account (for cloud save)
+- Internet connection (for WalkerAuth and Supabase)
 
 ### Quick Start
 
-**⭐ Recommended: Direct Full Version**
+1. **Clone the repository**
 ```bash
-python3 LangGames.py
-# Opens game directly with ?full=true (unlimited levels)
+git clone <repository-url>
+cd LangFight
 ```
 
-This launches:
-- Full version with unlimited levels
-- Auto-save and auto-load functionality
-- Encrypted data storage (EMDATA.txt)
-- Local HTTP server on port 9050
-- Sync server at `/server/save` and `/server/load`
+2. **Set up environment variables**
 
-### Access Full Version
-
-**Direct launch** (Only way for GitHub clone)
+Create a `.env` file in the project root:
 ```bash
-python3 LangGames.py
-# Opens full version with unlimited levels
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_anon_key
 ```
 
-## Server Architecture
-
-The Python launcher (`LangGames.py`) starts a local HTTP server on port 9050.
-
-### Routes (Port 9050)
-
-**Main Route:**
-- `/` - Full version game (unlimited levels)
-
-**Sync Endpoints:**
-- `/server/save` - Save encrypted game data (POST)
-- `/server/load` - Load encrypted game data (GET)
-
-**API Endpoints:**
-- `/api/data/save` - Save game data (POST)
-- `/api/data/load` - Load game data (GET)
-- `/api/sync/settings` - Configure sync settings (GET/POST)
-
-### Default Sync Configuration
-
-By default, the full version auto-syncs to the local server:
-- **Default URL**: `http://localhost:9050/server/save`
-- **Auto-sync**: Enabled by default
-- **Customizable**: Change in-game (💾 Data → ⚙️ Sync Settings)
-
-**To change default sync URL**, edit `LangGames.py` or use environment variable:
+3. **Run the game**
 ```bash
-export SYNC_URL=https://your-server.com/api/save
-python3 LangGames.py
+python3 LangFight.py
 ```
 
-## Data Storage & Encryption
+4. **Open in browser**
+- Automatically opens at `http://localhost:9048`
+- Or manually visit the URL shown in console
 
-### Server-Side Encryption (Full Version)
+### What Launches:
+- Local HTTP server on port 9048
+- Game interface with WalkerAuth login
+- API endpoints for Supabase integration
+- Auto-save system active
 
-1. **Encryption Key** (`.env` file):
-   - Generated on first run: 64-character hex key
-   - Stored in project root as `KEY=...`
-   - Used for all encryption/decryption
-
-2. **Encrypted Data** (`EMDATA.txt`):
-   - Stores: Level, Score, High Score, Games Played, Stats, Last Played
-   - Encrypted using XOR encryption with your KEY
-   - Saved automatically on exit and periodically during play
-
-3. **Auto-Save Triggers** (Full Version Only):
-   - Every 30 seconds during gameplay
-   - When browser tab/window closes
-   - When server shuts down (Ctrl+C)
-   - On game over
-
-4. **Auto-Load on Startup**:
-   - Server displays saved game info on startup
-   - Game automatically loads and restores progress
-   - Shows "Welcome Back! Level X • Score: Y" message
-
-### Browser Fallback Storage
-
-If server is unavailable:
-- Falls back to browser's localStorage
-- Uses `crypto.js` for browser-based encryption
-- Data stored as `EMDATA` in localStorage
-- Encryption key stored as `ENCRYPTION_KEY`
-
-### Data Management
-
-Click **💾 Data** button in-game to:
-1. **📥 Export EMDATA.txt** - Download encrypted save file
-2. **📤 Import EMDATA.txt** - Upload backup save file
-3. **🔑 Export .env Key** - Download encryption key
-4. **⚙️ Sync Settings** - Configure auto-sync URL and enable/disable
-
-### Cloud Sync
-
-**Auto-Sync (Enabled by Default):**
-- Automatically syncs to `http://localhost:9050/server/save`
-- Triggered after every save operation
-- Uses curl subprocess in background
-- Change URL in sync settings or `mainsite/server.py`
-
-**Manual Sync:**
-```bash
-# Using provided script
-chmod +x sync_data.sh
-./sync_data.sh https://your-server.com/api/save
-
-# Or use curl directly
-curl -X POST https://your-server.com/api/save \
-  -H "Content-Type: application/json" \
-  -d @EMDATA.txt
-```
-
-**Configure Sync in Game:**
-1. Click 💾 Data → ⚙️ Sync Settings
-2. Enter your server URL
-3. Enable/disable auto-sync
-4. Click Save
-
-## Game Controls
-
-- **Drag and Drop**: Drag Kannada words to matching vehicles
-- **CPU Mode**: Auto-play (Password: `abc123`)
-- **Speed Control**: Adjust game speed (⚡ button)
-- **Level Skip**: Jump to levels (📊 button)
-- **Fullscreen**: Press `*` key
-- **Data Menu**: Save/load management (💾 button)
-
-## File Structure
+## 🗂️ File Structure
 
 ```
-LangGames/
-├── LangGames.py              # 🌟 Main launcher (starts server + opens game)
-├── encryption_manager.py     # Server-side encryption handler
-├── .env                      # Encryption key (auto-generated)
-├── EMDATA.txt                # Encrypted save data (auto-created)
-├── sync_settings.json        # Sync configuration (auto-created)
-├── sync_data.sh              # Manual cloud sync script
+LangFight/
+├── LangFight.py              # Main launcher (starts server)
+├── walkerauth_client.py      # WalkerAuth authentication client
+├── .env                      # Supabase credentials (gitignored)
 ├── src/                      # Game files
-│   ├── index.html           # Game UI
-│   ├── game.js              # Core game logic ⚙️ CONFIG at top
-│   ├── crypto.js            # Browser-side encryption
+│   ├── index.html           # Game UI and tutorial
+│   ├── game.js              # Core game logic & click-to-match
 │   ├── vocabulary.js        # Kannada vocabulary database
-│   ├── style.css            # Game styles
+│   ├── style.css            # Game styles & tutorial CSS
 │   └── Map.png              # Path background image
-├── .gitignore               # Protects .env and EMDATA.txt
-└── README.md                # This file
+├── .gitignore               # Protects .env and sensitive files
+├── README.md                # This file
+└── requirements.txt         # Python dependencies
 ```
 
-## Configuration
+## ⚙️ Configuration
 
-### Easy Configuration Points
+### Server Configuration
 
-The game has a config section at the top of `src/game.js`:
+The game automatically uses the current domain for API calls:
 
-**`src/game.js`** (Lines 1-6):
+**`src/game.js`** (Lines 4-5):
 ```javascript
-// ============================================================
-// CONFIGURATION - Easy to modify
-// ============================================================
-const SERVER_PORT = 9050;  // Change this to match your server port
-const SERVER_URL = `http://localhost:${SERVER_PORT}`;
-// ============================================================
+// Use current domain (works for both localhost and production)
+const SERVER_URL = window.location.origin;
+```
+
+### Supabase Setup
+
+1. Create a [Supabase](https://supabase.com) project
+2. Create a table for game data (see schema below)
+3. Get your project URL and anon key
+4. Add to `.env` file
+
+**Supabase Table Schema:**
+```sql
+CREATE TABLE game_data (
+  user_id TEXT PRIMARY KEY,
+  level INTEGER,
+  score INTEGER,
+  high_score INTEGER,
+  games_played INTEGER,
+  last_played TIMESTAMP,
+  stats JSONB
+);
 ```
 
 ### Change Port
 
-1. Edit `src/game.js` → Change `SERVER_PORT = 9050`
-2. Edit `LangGames.py` → Change `PORT = 9050`
-3. Restart
-
-### Change Sync Server
-
-**Method 1: Environment variable** (Recommended)
-```bash
-export SYNC_URL=https://your-server.com/api/save
-python3 LangGames.py
+Edit `LangFight.py`:
+```python
+PORT = 9048  # Change to your preferred port
 ```
 
-**Method 2: In-game settings** (Per user)
-- Click 💾 Data → ⚙️ Sync Settings
-- Enter URL and save
+Then update any hardcoded references if needed.
 
-## Server Startup Info
-
-When you run `python3 LangGames.py`, the console shows:
-
-```
-============================================================
-🎮 LangGames - Kannada Learning Game
-============================================================
-Server: http://localhost:9050/
-Sync Endpoint: http://localhost:9050/server/save
-Encryption: ✓ Key loaded
-Sync: ✓ Enabled (local server)
-
-Saved Game: ✓ Found (Level 5, Score 1230)
-
-Features:
-  ✓ Full version with unlimited levels
-  ✓ Encrypted data storage (EMDATA.txt)
-  ✓ Auto-save every 30s + on exit
-  ✓ Auto-load on startup
-  ✓ Sync server at /server/save
-
-Press Ctrl+C to stop the server
-============================================================
-```
-
-## Customization
+## 🎨 Customization
 
 ### Change Vocabulary
+
 Edit `src/vocabulary.js`:
 ```javascript
-levels: {
-  1: [
-    { english: 'A', kannada: 'ಅ', difficulty: 'letter' },
-    // Add more...
-  ]
+const vocabulary = {
+  levels: {
+    1: [
+      { english: 'A', kannada: 'ಅ', difficulty: 'letter' },
+      { english: 'I', kannada: 'ಇ', difficulty: 'letter' },
+      // Add more...
+    ],
+    2: [
+      // Level 2 vocabulary...
+    ]
+  }
+};
+```
+
+### Change Difficulty Settings
+
+Edit `src/game.js`:
+
+**First 3 Levels Speed:**
+```javascript
+getSpeed() {
+  if (game.level === 1) {
+    baseSpeed = 0.3; // Very slow
+  } else if (game.level === 2) {
+    baseSpeed = 0.5; // Slow
+  } else if (game.level === 3) {
+    baseSpeed = 0.7; // Still slow
+  }
+  // ...
+}
+```
+
+**First 3 Levels Spawn Rate:**
+```javascript
+function startSpawning() {
+  if (game.level === 1) {
+    baseRate = 5000; // 5 seconds
+  } else if (game.level === 2) {
+    baseRate = 4000; // 4 seconds
+  } else if (game.level === 3) {
+    baseRate = 3500; // 3.5 seconds
+  }
+  // ...
 }
 ```
 
 ### Change Colors/Styles
-Edit `src/style.css` for visual customization
 
-### Change Vehicle Colors
-Edit `src/game.js` in the `Tank` class:
-```javascript
-getColor() {
-  switch (this.vehicleType) {
-    case 'suv': return '#4CAF50';      // Green
-    case 'tank': return '#FF9800';     // Orange
-    case 'blimp': return '#9C27B0';    // Purple
-  }
-}
+Edit `src/style.css`:
+- Tutorial styles: Lines 641-849
+- Game UI: Throughout the file
+- Vehicle colors defined in `src/game.js` Tank class
+
+### Modify Tutorial Content
+
+Edit `src/index.html` (Lines 98-133):
+```html
+<div class="tutorial-step active" data-step="0">
+  <h3>🎯 How to Play</h3>
+  <p>Your content here...</p>
+  <ul>
+    <li>Step 1...</li>
+    <li>Step 2...</li>
+  </ul>
+</div>
 ```
 
-## Troubleshooting
+## 🐛 Troubleshooting
 
 ### Game won't start
 ```bash
-# Make sure you're in the LangGames directory
-cd /path/to/LangGames
+# Make sure you're in the LangFight directory
+cd /path/to/LangFight
+
+# Check Python version
+python3 --version  # Should be 3.7+
 
 # Launch the game
-python3 LangGames.py
+python3 LangFight.py
 ```
 
 ### Port already in use
 ```bash
-# Kill process on port 9050
-lsof -ti:9050 | xargs kill -9
+# Kill process on port 9048
+lsof -ti:9048 | xargs kill -9
 
-# Or change the port in both files (see Configuration section)
+# Or change the port in LangFight.py
 ```
 
 ### Data not saving
-- Check you're using full version (`python3 LangGames.py`)
+- Check `.env` file has correct Supabase credentials
 - Open browser console (F12) and check for errors
-- Verify .env file exists with KEY=...
-- Check EMDATA.txt was created in project root
-
-### Lost encryption key
-1. If you have backup .env file, restore it to project root
-2. If not, you'll need to start fresh (old data can't be decrypted)
-3. **Prevention**: Regularly export your .env key (💾 Data → 🔑 Export .env)
-
-### Can't import EMDATA.txt
-- Ensure .env file has the correct KEY
-- Verify EMDATA.txt is valid (exported from same game)
-- Check file isn't corrupted
-- Try exporting again from working installation
-
-### Sync not working
-- Check server is running (`python3 LangGames.py`)
-- Verify sync URL in settings (💾 Data → ⚙️ Sync Settings)
+- Verify Supabase table exists and is accessible
 - Check server console for error messages
-- Test endpoint: `curl http://localhost:9050/server/load`
+- Test Supabase connection: `curl http://localhost:9048/api/data/load?user_id=test`
+
+### Can't login with WalkerAuth
+- Ensure internet connection is active
+- Check WalkerAuth service is available
+- Clear browser cache and cookies
+- Try incognito/private browsing mode
+- Check browser console for errors
+
+### Tutorial won't show
+- Tutorial only shows for users with **no saved data** in Supabase
+- Clear localStorage: `localStorage.removeItem('tutorialCompleted')`
+- Or use a different account/browser
+- Tutorial disabled if saved data exists for your account
 
 ### Welcome back message not showing
-- Check EMDATA.txt exists with data
-- Open browser console (F12) for errors
-- Verify server loaded the data (check server console on startup)
-- Ensure server is running (`python3 LangGames.py`)
+- Make sure you're logged in with WalkerAuth
+- Verify data exists in Supabase for your user_id
+- Check browser console (F12) for errors
+- Ensure server is running: `python3 LangFight.py`
 
-## Development
+### Vehicles moving too fast/slow
+- Use the **Speed Slider** in-game (1x-5x)
+- For learning mode adjustments, edit speed values in `src/game.js`
+- First 3 levels intentionally slower for beginners
 
-### Architecture
+## 🔒 Security Notes
 
-**Hybrid Client-Server:**
-- **Frontend**: Pure HTML/CSS/JavaScript (no build step)
-- **Backend**: Python HTTP server (optional, for sync and serving)
-- **Storage**: File-based (EMDATA.txt) + browser localStorage fallback
-- **Encryption**: XOR encryption (server) + browser crypto (fallback)
+- **Supabase credentials** stored in `.env` file - keep it safe!
+- `.gitignore` protects `.env` from being committed
+- WalkerAuth handles secure authentication
+- User data isolated per account in Supabase
+- All API calls use user_id from localStorage (set by WalkerAuth)
+- No sensitive data stored in browser localStorage (only user_id, tokens)
 
-### Testing Locally
-
-**Test server:**
-```bash
-python3 LangGames.py
-# Visit http://localhost:9050
-```
-
-**Test encryption:**
-```bash
-python3 -c "from encryption_manager import EncryptionManager; \
-  em = EncryptionManager(); em.load_or_create_key(); \
-  print('Key:', em.key[:20] + '...')"
-```
-
-**Test endpoints:**
-```bash
-# Check server is running
-curl http://localhost:9050/server/load
-
-# Save test data
-curl -X POST http://localhost:9050/server/save \
-  -H "Content-Type: application/json" \
-  -d '{"level":5,"score":1000}'
-```
-
-### Making Changes
-
-- **Edit vocabulary**: `src/vocabulary.js`
-- **Modify game logic**: `src/game.js`
-- **Change server**: `LangGames.py`
-- **Update encryption**: `encryption_manager.py` or `src/crypto.js`
-- **Modify styles**: `src/style.css`
-- **No build required** - just refresh browser!
-
-### Adding New Endpoints
-
-Edit `LangGames.py` to add custom server routes:
-```python
-# In the CustomHTTPRequestHandler class
-# Add to do_GET method for GET requests
-# Add to do_POST method for POST requests
-```
-
-## Security Notes
-
-- **Encryption key** stored in `.env` file - keep it safe!
-- **.gitignore** protects `.env` and `EMDATA.txt` from commits
-- Data encrypted before upload - server sees only ciphertext
-- XOR encryption is simple but effective for local use
-- **Export .env regularly** as backup (💾 Data → 🔑 Export .env)
-- If .env is lost, encrypted data cannot be recovered
-
-## Contributing
+## 🤝 Contributing
 
 Feel free to:
 - Add more vocabulary to `src/vocabulary.js`
-- Improve encryption in `encryption_manager.py`
 - Enhance UI in `src/style.css`
+- Improve game mechanics in `src/game.js`
+- Add new tutorial steps in `src/index.html`
+- Optimize difficulty progression
 - Fix bugs and submit pull requests
 
-## License
+**Development Workflow:**
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test locally with `python3 LangFight.py`
+5. Submit a pull request
+
+## 📜 License
 
 Educational project - MIT License
 Feel free to modify and distribute
 
-## Credits
+## 🙏 Credits
 
 Created with Claude Code
 Kannada language learning game
 Made with ❤️ for language learners
 
-## Docker Deployment
+**Technologies Used:**
+- Python 3 (HTTP server)
+- Vanilla JavaScript (game logic)
+- HTML5 Canvas (game rendering)
+- CSS3 (styling and animations)
+- Supabase (cloud database)
+- WalkerAuth (authentication)
 
-To run LangGames in a Docker container, follow these steps:
+## 🐳 Docker Deployment
 
-1.  **Build the Docker Image**
+To run LangFight in a Docker container:
 
-    Navigate to the root directory of the LangGames project (where `Dockerfile` is located) and run the following command to build the Docker image:
+### Build the Docker Image
 
-    ```bash
-    docker build -t langgames .
-    ```
+```bash
+docker build -t langfight .
+```
 
-    This command builds an image named `langgames` from your `Dockerfile`.
+### Run the Docker Container
 
-2.  **Run the Docker Container**
+```bash
+docker run -p 9048:9048 --env-file .env langfight
+```
 
-    Once the image is built, you can run the application in a Docker container using the following command:
+- `-p 9048:9048`: Maps port 9048 (host to container)
+- `--env-file .env`: Loads Supabase credentials from .env file
 
-    ```bash
-    docker run -p 9048:9048 langgames
-    ```
+### Access the Game
 
-    -   `-p 9048:9048`: This maps port 9048 on your host machine to port 9048 inside the Docker container. LangGames runs on port 9048 by default.
+Open your browser at `http://localhost:9048`
 
-    After running the container, you can access the game in your web browser at `http://localhost:9048`.
+### Notes
+- Fullscreen auto-toggle is disabled in Docker (`DISABLE_PYNPUT=1`)
+- You can still press `*` manually to toggle fullscreen
+- Make sure `.env` file exists with Supabase credentials before building
 
-3.  **Accessing Game Data (Optional)**
+## 📚 Additional Documentation
 
-    The game generates an encryption key in `.env` and stores save data in `EMDATA.txt`. By default, these files are created inside the container, meaning they will be lost if the container is removed. To persist this data, you can mount a volume:
+- **WalkerAuth Integration**: See `WALKERAUTH_INTEGRATION.md`
+- **Supabase Setup**: See `SUPABASE_SETUP.md`
+- **Deployment Guides**: See `DEPLOY_*.md` files
 
-    ```bash
-    docker run -p 9048:9048 -v $(pwd)/data:/app langgames
-    ```
+## 🎯 Roadmap
 
-    This command mounts a local directory named `data` (which will be created in your current directory if it doesn't exist) to the `/app` directory inside the container. This way, `.env` and `EMDATA.txt` will be stored in your local `data` directory.
+Future enhancements planned:
+- [ ] Sound effects toggle
+- [ ] More languages support
+- [ ] Leaderboard system
+- [ ] Achievement badges
+- [ ] Daily challenges
+- [ ] Mobile app version
+- [ ] Multiplayer mode
+- [ ] Custom vocabulary import
 
-> Note: In Docker, fullscreen auto-toggle is disabled. The container sets `DISABLE_PYNPUT=1`, so the "press * automatically" feature is skipped. You can still press `*` manually in the browser to toggle fullscreen.
+## 📞 Support
+
+For issues, questions, or feedback:
+- Open an issue on GitHub
+- Check existing documentation
+- Review troubleshooting section above
+- Test in browser console (F12) for error messages

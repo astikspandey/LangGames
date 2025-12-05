@@ -609,8 +609,6 @@ function renderDraggableItems() {
     const container = document.getElementById('draggableItems');
     container.innerHTML = '';
 
-    const isClickMode = game.level <= 3; // First 3 levels use click mode
-
     game.draggableItems.forEach((item, index) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'draggable-item-wrapper';
@@ -623,23 +621,19 @@ function renderDraggableItems() {
         div.dataset.kannada = item.kannada;
         div.dataset.index = index;
 
-        // Set draggable based on mode and match status
+        // All levels use click mode now
         const isMatched = game.fullyMatchedItems.has(item.english);
 
-        if (isClickMode) {
-            div.draggable = false; // No drag in first 3 levels
-            div.style.cursor = isMatched ? 'not-allowed' : 'pointer';
-        } else {
-            div.draggable = !isMatched; // Normal drag mode after level 3
-        }
+        div.draggable = false; // No drag and drop
+        div.style.cursor = isMatched ? 'not-allowed' : 'pointer';
 
         // Only mark as matched if ALL instances have been destroyed
         if (isMatched) {
             div.classList.add('matched');
         }
 
-        // Add click handler for first 3 levels
-        if (isClickMode && !isMatched) {
+        // Add click handler for all levels
+        if (!isMatched) {
             div.addEventListener('click', () => {
                 selectWord(item.english, item.kannada, div);
             });
@@ -687,17 +681,33 @@ function renderDraggableItems() {
     });
 }
 
-// Select word in click mode (levels 1-3)
+// Click word to match with first vehicle on path
 function selectWord(english, kannada, element) {
-    // Deselect previous word
-    const previousSelected = document.querySelector('.draggable-item.selected');
-    if (previousSelected) {
-        previousSelected.classList.remove('selected');
+    // Find the first vehicle on the path (earliest spawned, furthest along)
+    if (game.activeTanks.length === 0) {
+        // No vehicles to match
+        return;
     }
 
-    // Select new word
-    element.classList.add('selected');
-    game.selectedWord = { english, kannada };
+    // Get the first tank (index 0 is the oldest/furthest along)
+    const firstTank = game.activeTanks[0];
+
+    // Check if it matches
+    if (firstTank.vocabulary.english === english) {
+        // Correct match!
+        handleCorrectMatch(firstTank, english);
+    } else {
+        // Wrong match
+        createParticles(firstTank.x, firstTank.y, '#F44336', 'wrong', 1);
+        playWrongSound();
+
+        game.mistakes.push({
+            attempted: kannada,
+            correct: firstTank.vocabulary.kannada,
+            english: firstTank.vocabulary.english
+        });
+        loseLife();
+    }
 }
 
 // Start spawning tanks
@@ -1029,15 +1039,7 @@ function updateUI() {
         document.getElementById('levelStatus').textContent = game.level;
     }
 
-    // Update sidebar title based on level
-    const sidebarTitle = document.getElementById('sidebarTitle');
-    if (sidebarTitle) {
-        if (game.level <= 3) {
-            sidebarTitle.textContent = 'Click to Select';
-        } else {
-            sidebarTitle.textContent = 'Drag to Match';
-        }
-    }
+    // Sidebar title is always "Click to Match" now
 }
 
 // Draw the path
@@ -1273,51 +1275,7 @@ function setupEventListeners() {
         }
     });
 
-    // Drag and drop event listeners
-    const draggableContainer = document.getElementById('draggableItems');
-
-    draggableContainer.addEventListener('dragstart', (e) => {
-        if (e.target.classList.contains('draggable-item') && !e.target.classList.contains('matched')) {
-            e.target.classList.add('dragging');
-            game.draggedElement = e.target;
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', e.target.dataset.english);
-        }
-    });
-
-    draggableContainer.addEventListener('dragend', (e) => {
-        if (e.target.classList.contains('draggable-item')) {
-            e.target.classList.remove('dragging');
-        }
-    });
-
-    // Canvas click handler for click mode (levels 1-3)
-    game.canvas.addEventListener('click', (e) => {
-        if (game.level <= 3 && game.selectedWord) {
-            // Click mode - match selected word with clicked vehicle
-            checkMatch(game.selectedWord.kannada, game.selectedWord.english, e.clientX, e.clientY);
-        }
-    });
-
-    // Canvas drop zone (for levels 4+)
-    game.canvas.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-    });
-
-    game.canvas.addEventListener('drop', (e) => {
-        e.preventDefault();
-
-        if (game.draggedElement) {
-            const english = game.draggedElement.dataset.english;
-            const kannada = game.draggedElement.dataset.kannada;
-
-            // Check match at drop location
-            checkMatch(kannada, english, e.clientX, e.clientY);
-
-            game.draggedElement = null;
-        }
-    });
+    // No drag and drop - all interaction happens via click on sidebar words
 
 }
 
