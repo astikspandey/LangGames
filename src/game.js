@@ -5,14 +5,18 @@
 const SERVER_URL = window.location.origin;
 // ============================================================
 
-// Data persistence module (server + fallback to browser)
+// Data persistence module (Supabase only via server)
 const DataManager = {
     apiUrl: `${SERVER_URL}/api`,
     autoSaveInterval: null,
-    useServer: true, // Try server first, fallback to browser
 
     async saveGameData() {
+        // Get user_id from localStorage (WalkerAuth) or use default
+        const userEmail = localStorage.getItem('user_email');
+        const userId = userEmail || localStorage.getItem('user_id') || 'default_user';
+
         const gameData = {
+            user_id: userId,
             level: game.level,
             score: game.score,
             highScore: this.getHighScore(),
@@ -24,54 +28,53 @@ const DataManager = {
             }
         };
 
-        // Try server first
-        if (this.useServer) {
-            try {
-                const response = await fetch(`${this.apiUrl}/data/save`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(gameData)
-                });
+        try {
+            const response = await fetch(`${this.apiUrl}/data/save`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(gameData)
+            });
 
-                if (response.ok) {
-                    console.log('Game data saved to server (encrypted + synced)');
-                    return;
-                }
-            } catch (error) {
-                console.log('Server not available, using browser storage');
-                this.useServer = false; // Fallback to browser
+            if (response.ok) {
+                console.log('✓ Game data saved to Supabase');
+                return true;
+            } else {
+                const error = await response.json();
+                console.error('✗ Failed to save game data:', error);
+                return false;
             }
+        } catch (error) {
+            console.error('✗ Server error while saving:', error);
+            return false;
         }
-
-        // Fallback to browser storage
-        CryptoManager.saveEncryptedData(gameData);
-        console.log('Game data saved to browser (encrypted)');
     },
 
     async loadGameData() {
-        // Try server first
-        if (this.useServer) {
-            try {
-                const response = await fetch(`${this.apiUrl}/data/load`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && Object.keys(data).length > 0) {
-                        console.log('Game data loaded from server');
-                        return data;
-                    }
-                }
-            } catch (error) {
-                console.log('Server not available, using browser storage');
-                this.useServer = false;
-            }
-        }
+        try {
+            // Get user_id from localStorage (WalkerAuth) or use default
+            const userEmail = localStorage.getItem('user_email');
+            const userId = userEmail || localStorage.getItem('user_id') || 'default_user';
 
-        // Fallback to browser storage
-        const data = CryptoManager.loadEncryptedData();
-        if (data) {
-            console.log('Game data loaded from browser');
+            const response = await fetch(`${this.apiUrl}/data/load?user_id=${encodeURIComponent(userId)}`);
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data && Object.keys(data).length > 0) {
+                    console.log('✓ Game data loaded from Supabase');
+                    return data;
+                } else {
+                    console.log('ℹ No saved game data found');
+                    return null;
+                }
+            } else {
+                const error = await response.json();
+                console.error('✗ Failed to load game data:', error);
+                return null;
+            }
+        } catch (error) {
+            console.error('✗ Server error while loading:', error);
+            return null;
         }
-        return data;
     },
 
     startAutoSave() {
@@ -144,7 +147,8 @@ const game = {
     savedLevel: 1, // Level to return to if player loses immediately after skip
     hasPlayedCurrentLevel: false, // Track if player has played current level
     particles: [], // Visual feedback particles
-    audioContext: null // Audio context for sound effects
+    audioContext: null, // Audio context for sound effects
+    selectedWord: null // Currently selected word for click mode (levels 1-3)
 };
 
 // Path waypoints based on the map image
@@ -189,7 +193,18 @@ class Tank {
     }
 
     getSpeed() {
-        const baseSpeed = 1 + (game.level * 0.15);
+        // First 3 levels are much slower for learning
+        let baseSpeed;
+        if (game.level === 1) {
+            baseSpeed = 0.3; // Very slow for first level
+        } else if (game.level === 2) {
+            baseSpeed = 0.5; // Slow for second level
+        } else if (game.level === 3) {
+            baseSpeed = 0.7; // Still slow for third level
+        } else {
+            baseSpeed = 1 + (game.level * 0.15); // Normal progression after level 3
+        }
+
         switch (this.vehicleType) {
             case 'suv': return baseSpeed * 1.8;
             case 'tank': return baseSpeed * 1.2;
@@ -431,6 +446,77 @@ function showWelcomeBackMessage() {
     }, 2000);
 }
 
+// Tutorial management
+const Tutorial = {
+    currentStep: 0,
+    totalSteps: 4,
+
+    show() {
+        document.getElementById('tutorialOverlay').style.display = 'flex';
+        game.isGameOver = true; // Pause game during tutorial
+    },
+
+    hide() {
+        document.getElementById('tutorialOverlay').style.display = 'none';
+        game.isGameOver = false; // Resume game
+        localStorage.setItem('tutorialCompleted', 'true');
+    },
+
+    nextStep() {
+        if (this.currentStep < this.totalSteps - 1) {
+            this.currentStep++;
+            this.updateStep();
+        } else {
+            this.hide();
+        }
+    },
+
+    prevStep() {
+        if (this.currentStep > 0) {
+            this.currentStep--;
+            this.updateStep();
+        }
+    },
+
+    updateStep() {
+        // Update steps visibility
+        const steps = document.querySelectorAll('.tutorial-step');
+        steps.forEach((step, index) => {
+            step.classList.toggle('active', index === this.currentStep);
+        });
+
+        // Update dots
+        const dots = document.querySelectorAll('.tutorial-dots .dot');
+        dots.forEach((dot, index) => {
+            dot.classList.toggle('active', index === this.currentStep);
+        });
+
+        // Update buttons
+        const prevBtn = document.getElementById('tutorialPrev');
+        const nextBtn = document.getElementById('tutorialNext');
+
+        prevBtn.disabled = this.currentStep === 0;
+        nextBtn.textContent = this.currentStep === this.totalSteps - 1 ? 'Start Playing!' : 'Next →';
+    },
+
+    init() {
+        // Previous button
+        document.getElementById('tutorialPrev').addEventListener('click', () => {
+            this.prevStep();
+        });
+
+        // Next button
+        document.getElementById('tutorialNext').addEventListener('click', () => {
+            this.nextStep();
+        });
+
+        // Skip button
+        document.getElementById('tutorialSkip').addEventListener('click', () => {
+            this.hide();
+        });
+    }
+};
+
 // Initialize game
 async function initGame() {
     game.canvas = document.getElementById('gameCanvas');
@@ -457,6 +543,16 @@ async function initGame() {
     startSpawning();
     gameLoop();
     setupEventListeners();
+
+    // Initialize tutorial
+    Tutorial.init();
+
+    // Show tutorial if no saved data and first time user
+    if (!hasRestoredData && !localStorage.getItem('tutorialCompleted')) {
+        setTimeout(() => {
+            Tutorial.show();
+        }, 500);
+    }
 
     // Show welcome back message AFTER game loop starts (if data was restored)
     if (hasRestoredData) {
@@ -513,6 +609,8 @@ function renderDraggableItems() {
     const container = document.getElementById('draggableItems');
     container.innerHTML = '';
 
+    const isClickMode = game.level <= 3; // First 3 levels use click mode
+
     game.draggableItems.forEach((item, index) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'draggable-item-wrapper';
@@ -524,12 +622,27 @@ function renderDraggableItems() {
         div.dataset.english = item.english;
         div.dataset.kannada = item.kannada;
         div.dataset.index = index;
-        div.draggable = true;
+
+        // Set draggable based on mode and match status
+        const isMatched = game.fullyMatchedItems.has(item.english);
+
+        if (isClickMode) {
+            div.draggable = false; // No drag in first 3 levels
+            div.style.cursor = isMatched ? 'not-allowed' : 'pointer';
+        } else {
+            div.draggable = !isMatched; // Normal drag mode after level 3
+        }
 
         // Only mark as matched if ALL instances have been destroyed
-        if (game.fullyMatchedItems.has(item.english)) {
+        if (isMatched) {
             div.classList.add('matched');
-            div.draggable = false;
+        }
+
+        // Add click handler for first 3 levels
+        if (isClickMode && !isMatched) {
+            div.addEventListener('click', () => {
+                selectWord(item.english, item.kannada, div);
+            });
         }
 
         // Create hint element
@@ -574,13 +687,37 @@ function renderDraggableItems() {
     });
 }
 
+// Select word in click mode (levels 1-3)
+function selectWord(english, kannada, element) {
+    // Deselect previous word
+    const previousSelected = document.querySelector('.draggable-item.selected');
+    if (previousSelected) {
+        previousSelected.classList.remove('selected');
+    }
+
+    // Select new word
+    element.classList.add('selected');
+    game.selectedWord = { english, kannada };
+}
+
 // Start spawning tanks
 function startSpawning() {
     if (game.spawnInterval) {
         clearInterval(game.spawnInterval);
     }
 
-    const baseRate = Math.max(1000, game.baseSpawnRate - (game.level * 200));
+    let baseRate;
+    // First 3 levels spawn much slower for learning
+    if (game.level === 1) {
+        baseRate = 5000; // 5 seconds for level 1
+    } else if (game.level === 2) {
+        baseRate = 4000; // 4 seconds for level 2
+    } else if (game.level === 3) {
+        baseRate = 3500; // 3.5 seconds for level 3
+    } else {
+        baseRate = Math.max(1000, game.baseSpawnRate - (game.level * 200)); // Normal progression
+    }
+
     const spawnRate = baseRate / game.speedMultiplier;
 
     game.spawnInterval = setInterval(() => {
@@ -891,6 +1028,16 @@ function updateUI() {
         levelSlider.value = game.level;
         document.getElementById('levelStatus').textContent = game.level;
     }
+
+    // Update sidebar title based on level
+    const sidebarTitle = document.getElementById('sidebarTitle');
+    if (sidebarTitle) {
+        if (game.level <= 3) {
+            sidebarTitle.textContent = 'Click to Select';
+        } else {
+            sidebarTitle.textContent = 'Drag to Match';
+        }
+    }
 }
 
 // Draw the path
@@ -1144,7 +1291,15 @@ function setupEventListeners() {
         }
     });
 
-    // Canvas drop zone
+    // Canvas click handler for click mode (levels 1-3)
+    game.canvas.addEventListener('click', (e) => {
+        if (game.level <= 3 && game.selectedWord) {
+            // Click mode - match selected word with clicked vehicle
+            checkMatch(game.selectedWord.kannada, game.selectedWord.english, e.clientX, e.clientY);
+        }
+    });
+
+    // Canvas drop zone (for levels 4+)
     game.canvas.addEventListener('dragover', (e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
@@ -1164,87 +1319,6 @@ function setupEventListeners() {
         }
     });
 
-    // Data menu buttons
-    document.getElementById('dataMenuBtn').addEventListener('click', () => {
-        document.getElementById('dataMenu').style.display = 'flex';
-    });
-
-    document.getElementById('closeDataMenuBtn').addEventListener('click', () => {
-        document.getElementById('dataMenu').style.display = 'none';
-    });
-
-    document.getElementById('exportDataBtn').addEventListener('click', () => {
-        CryptoManager.exportToFile();
-    });
-
-    document.getElementById('importDataBtn').addEventListener('click', () => {
-        document.getElementById('importFileInput').click();
-    });
-
-    document.getElementById('importFileInput').addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            try {
-                const data = await CryptoManager.importFromFile(file);
-                alert('Data imported successfully!\n\nReload the page to see your imported data.');
-                document.getElementById('dataMenu').style.display = 'none';
-            } catch (error) {
-                alert('Failed to import data: ' + error.message);
-            }
-        }
-        e.target.value = ''; // Reset input
-    });
-
-    document.getElementById('exportKeyBtn').addEventListener('click', () => {
-        CryptoManager.exportKey();
-    });
-
-    document.getElementById('syncSettingsBtn').addEventListener('click', async () => {
-        document.getElementById('dataMenu').style.display = 'none';
-
-        // Load current settings
-        try {
-            const response = await fetch(`${DataManager.apiUrl}/sync/settings`);
-            if (response.ok) {
-                const settings = await response.json();
-                document.getElementById('syncEnabled').checked = settings.enabled || false;
-                document.getElementById('syncUrl').value = settings.url || 'https://example.com/api/save';
-            }
-        } catch (error) {
-            console.log('Could not load sync settings from server');
-        }
-
-        document.getElementById('syncMenu').style.display = 'flex';
-    });
-
-    document.getElementById('closeSyncMenuBtn').addEventListener('click', () => {
-        document.getElementById('syncMenu').style.display = 'none';
-    });
-
-    document.getElementById('saveSyncBtn').addEventListener('click', async () => {
-        const settings = {
-            enabled: document.getElementById('syncEnabled').checked,
-            url: document.getElementById('syncUrl').value
-        };
-
-        try {
-            const response = await fetch(`${DataManager.apiUrl}/sync/settings`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(settings)
-            });
-
-            if (response.ok) {
-                alert('Sync settings saved!\n\n' +
-                      (settings.enabled ? `✓ Auto-sync enabled to:\n${settings.url}` : '✗ Auto-sync disabled'));
-                document.getElementById('syncMenu').style.display = 'none';
-            } else {
-                alert('Failed to save settings. Make sure the server is running.');
-            }
-        } catch (error) {
-            alert('Server not available. Settings not saved.');
-        }
-    });
 }
 
 // WalkerAuth Integration

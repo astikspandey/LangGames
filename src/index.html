@@ -44,22 +44,6 @@
                     <input type="range" id="levelSlider" min="1" max="20" value="1" class="slider">
                     <span id="levelStatus" class="level-status">1</span>
                 </div>
-                <div class="data-control">
-                    <button id="dataMenuBtn" class="data-menu-btn">💾 Data</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Data Management Menu -->
-        <div class="data-menu" id="dataMenu" style="display: none;">
-            <div class="data-menu-content">
-                <h3>Data Management</h3>
-                <button id="exportDataBtn" class="menu-btn">📥 Export EMDATA.txt</button>
-                <button id="importDataBtn" class="menu-btn">📤 Import EMDATA.txt</button>
-                <button id="exportKeyBtn" class="menu-btn">🔑 Export .env Key</button>
-                <button id="syncSettingsBtn" class="menu-btn">⚙️ Sync Settings</button>
-                <button id="closeDataMenuBtn" class="menu-btn close-btn">✖ Close</button>
-                <input type="file" id="importFileInput" accept=".txt" style="display: none;">
             </div>
         </div>
 
@@ -85,7 +69,7 @@
 
         <div class="game-layout">
             <div class="sidebar">
-                <div class="sidebar-title">Drag to Match</div>
+                <div class="sidebar-title" id="sidebarTitle">Click to Select</div>
                 <div id="draggableItems" class="draggable-items"></div>
             </div>
 
@@ -103,6 +87,62 @@
                 <div id="mistakesContainer" class="mistakes-container"></div>
 
                 <button id="restartBtn" class="restart-btn">Play Again</button>
+            </div>
+        </div>
+
+        <!-- Tutorial Overlay -->
+        <div class="tutorial-overlay" id="tutorialOverlay" style="display: none;">
+            <div class="tutorial-content">
+                <h2>Welcome to LangGames!</h2>
+                <div class="tutorial-steps" id="tutorialSteps">
+                    <div class="tutorial-step active" data-step="0">
+                        <h3>🎯 How to Play</h3>
+                        <p>Match Kannada words with English vehicles traveling on the path</p>
+                        <ul>
+                            <li><strong>Levels 1-3 (Learning Mode):</strong> Click a Kannada word, then click the matching vehicle</li>
+                            <li><strong>Level 4+:</strong> Drag Kannada words and drop them on matching vehicles</li>
+                            <li>Vehicles show English words - match them with Kannada translations</li>
+                        </ul>
+                    </div>
+                    <div class="tutorial-step" data-step="1">
+                        <h3>🚗 Vehicle Types</h3>
+                        <ul>
+                            <li><span style="color: #4CAF50;">🚙 Green SUV</span> - Letters (Fast)</li>
+                            <li><span style="color: #FF9800;">🛡️ Orange Tank</span> - Words (Medium)</li>
+                            <li><span style="color: #9C27B0;">🎈 Purple Blimp</span> - Sentences (Slow)</li>
+                        </ul>
+                        <p>Match them before they reach the end!</p>
+                    </div>
+                    <div class="tutorial-step" data-step="2">
+                        <h3>⚙️ Controls</h3>
+                        <ul>
+                            <li><strong>Speed Slider</strong> - Adjust game speed (1x-5x)</li>
+                            <li><strong>Level Slider</strong> - Skip to any level</li>
+                            <li><strong>Lives</strong> - You have 3 hearts ❤️❤️❤️</li>
+                            <li>Lose a life for wrong matches or missed vehicles</li>
+                        </ul>
+                    </div>
+                    <div class="tutorial-step" data-step="3">
+                        <h3>💡 Tips</h3>
+                        <ul>
+                            <li>Hover over Kannada words for hints (0.5s delay)</li>
+                            <li>Green checkmark ✓ means word is fully matched</li>
+                            <li>Your progress auto-saves every 30 seconds</li>
+                            <li>Press <strong>*</strong> key for fullscreen</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="tutorial-navigation">
+                    <button id="tutorialPrev" class="tutorial-btn" disabled>← Previous</button>
+                    <div class="tutorial-dots" id="tutorialDots">
+                        <span class="dot active"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
+                    <button id="tutorialNext" class="tutorial-btn">Next →</button>
+                </div>
+                <button id="tutorialSkip" class="tutorial-skip-btn">Skip Tutorial</button>
             </div>
         </div>
 

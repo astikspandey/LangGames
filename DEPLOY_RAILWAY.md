@@ -1,8 +1,8 @@
-# Deploy LangFight to Railway
+# Deploy LangGames to Railway
 
 ## Why Railway Instead of Vercel?
 
-LangFight is a Python HTTP server, which doesn't work on Vercel (Node.js/serverless platform). Railway is perfect for Python applications and is free to start.
+LangGames is a Python HTTP server, which doesn't work on Vercel (Node.js/serverless platform). Railway is perfect for Python applications and is free to start.
 
 ## Quick Deploy (5 Minutes)
 
@@ -12,21 +12,21 @@ LangFight is a Python HTTP server, which doesn't work on Vercel (Node.js/serverl
 2. Click "Start a New Project"
 3. Sign in with GitHub
 
-### Step 2: Deploy LangFight
+### Step 2: Deploy LangGames
 
 1. Click "Deploy from GitHub repo"
-2. Select your **LangFight** repository
+2. Select your **LangGames** repository
 3. Railway will automatically:
    - Detect Python
    - Install requirements from `requirements.txt`
-   - Run `python LangFight.py`
+   - Run `python LangGames.py`
 
 ### Step 3: Get Your Deployment URL
 
 1. After deployment completes, click on your project
 2. Click "Settings" → "Domains"
 3. Click "Generate Domain"
-4. You'll get a URL like: `langfight-production.up.railway.app`
+4. You'll get a URL like: `langgames-production.up.railway.app`
 
 ### Step 4: Set Environment Variables (Optional)
 
@@ -43,9 +43,9 @@ Go back to WalkerAuth's `sites.json` and update:
 
 ```json
 {
-  "LangFight": {
+  "LangGames": {
     "redirect_url": "https://your-railway-url.up.railway.app/oauth/callback",
-    "secret_key": "langfight_secret_key_12345"
+    "secret_key": "langgames_secret_key_12345"
   }
 }
 ```
@@ -54,11 +54,11 @@ Replace `your-railway-url` with your actual Railway domain.
 
 ## Alternative: Use Custom Domain
 
-If you want `langfight.walkerco.co`:
+If you want `langgames.walkerco.co`:
 
 1. In Railway → Settings → Domains
 2. Click "Custom Domain"
-3. Enter: `langfight.walkerco.co`
+3. Enter: `langgames.walkerco.co`
 4. Railway will give you a CNAME record
 5. Add that CNAME to your DNS (Cloudflare, etc.)
 
@@ -67,10 +67,10 @@ If you want `langfight.walkerco.co`:
 Once deployed:
 
 1. Visit your Railway URL: `https://your-app.up.railway.app`
-2. Should see LangFight game load!
-3. Test OAuth: Visit `https://walkerauth.walkerco.co?id=LangFight`
+2. Should see LangGames game load!
+3. Test OAuth: Visit `https://walkerauth.walkerco.co?id=LangGames`
 4. Sign in with Google
-5. Should redirect to LangFight with authentication!
+5. Should redirect to LangGames with authentication!
 
 ## Troubleshooting
 
@@ -123,4 +123,4 @@ If you prefer something else:
 ✅ Good for Python web servers
 ✅ Custom domains supported
 
-Railway is the best choice for LangFight!
+Railway is the best choice for LangGames!

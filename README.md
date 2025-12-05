@@ -1,4 +1,4 @@
-# LangFight - Kannada Learning Game
+# LangGames - Kannada Learning Game
 
 An interactive educational game to learn Kannada vocabulary through drag-and-drop gameplay with particle effects and audio feedback.
 
@@ -32,7 +32,7 @@ An interactive educational game to learn Kannada vocabulary through drag-and-dro
 ## Features
 
 ### Full Desktop Version (GitHub Clone)
-When you run `python3 LangFight.py`, you get:
+When you run `python3 LangGames.py`, you get:
 - **Unlimited Levels** - Access all content (letters, words, sentences)
 - **Encrypted Data Storage** - EMDATA.txt with custom KEY in .env
 - **Auto-Save** - Saves every 30 seconds + on browser close
@@ -52,7 +52,7 @@ When you run `python3 LangFight.py`, you get:
 
 **⭐ Recommended: Direct Full Version**
 ```bash
-python3 LangFight.py
+python3 LangGames.py
 # Opens game directly with ?full=true (unlimited levels)
 ```
 
@@ -67,13 +67,13 @@ This launches:
 
 **Direct launch** (Only way for GitHub clone)
 ```bash
-python3 LangFight.py
+python3 LangGames.py
 # Opens full version with unlimited levels
 ```
 
 ## Server Architecture
 
-The Python launcher (`LangFight.py`) starts a local HTTP server on port 9050.
+The Python launcher (`LangGames.py`) starts a local HTTP server on port 9050.
 
 ### Routes (Port 9050)
 
@@ -96,10 +96,10 @@ By default, the full version auto-syncs to the local server:
 - **Auto-sync**: Enabled by default
 - **Customizable**: Change in-game (💾 Data → ⚙️ Sync Settings)
 
-**To change default sync URL**, edit `LangFight.py` or use environment variable:
+**To change default sync URL**, edit `LangGames.py` or use environment variable:
 ```bash
 export SYNC_URL=https://your-server.com/api/save
-python3 LangFight.py
+python3 LangGames.py
 ```
 
 ## Data Storage & Encryption
@@ -181,8 +181,8 @@ curl -X POST https://your-server.com/api/save \
 ## File Structure
 
 ```
-LangFight/
-├── LangFight.py              # 🌟 Main launcher (starts server + opens game)
+LangGames/
+├── LangGames.py              # 🌟 Main launcher (starts server + opens game)
 ├── encryption_manager.py     # Server-side encryption handler
 ├── .env                      # Encryption key (auto-generated)
 ├── EMDATA.txt                # Encrypted save data (auto-created)
@@ -218,7 +218,7 @@ const SERVER_URL = `http://localhost:${SERVER_PORT}`;
 ### Change Port
 
 1. Edit `src/game.js` → Change `SERVER_PORT = 9050`
-2. Edit `LangFight.py` → Change `PORT = 9050`
+2. Edit `LangGames.py` → Change `PORT = 9050`
 3. Restart
 
 ### Change Sync Server
@@ -226,7 +226,7 @@ const SERVER_URL = `http://localhost:${SERVER_PORT}`;
 **Method 1: Environment variable** (Recommended)
 ```bash
 export SYNC_URL=https://your-server.com/api/save
-python3 LangFight.py
+python3 LangGames.py
 ```
 
 **Method 2: In-game settings** (Per user)
@@ -235,11 +235,11 @@ python3 LangFight.py
 
 ## Server Startup Info
 
-When you run `python3 LangFight.py`, the console shows:
+When you run `python3 LangGames.py`, the console shows:
 
 ```
 ============================================================
-🎮 LangFight - Kannada Learning Game
+🎮 LangGames - Kannada Learning Game
 ============================================================
 Server: http://localhost:9050/
 Sync Endpoint: http://localhost:9050/server/save
@@ -291,11 +291,11 @@ getColor() {
 
 ### Game won't start
 ```bash
-# Make sure you're in the LangFight directory
-cd /path/to/LangFight
+# Make sure you're in the LangGames directory
+cd /path/to/LangGames
 
 # Launch the game
-python3 LangFight.py
+python3 LangGames.py
 ```
 
 ### Port already in use
@@ -307,7 +307,7 @@ lsof -ti:9050 | xargs kill -9
 ```
 
 ### Data not saving
-- Check you're using full version (`python3 LangFight.py`)
+- Check you're using full version (`python3 LangGames.py`)
 - Open browser console (F12) and check for errors
 - Verify .env file exists with KEY=...
 - Check EMDATA.txt was created in project root
@@ -324,7 +324,7 @@ lsof -ti:9050 | xargs kill -9
 - Try exporting again from working installation
 
 ### Sync not working
-- Check server is running (`python3 LangFight.py`)
+- Check server is running (`python3 LangGames.py`)
 - Verify sync URL in settings (💾 Data → ⚙️ Sync Settings)
 - Check server console for error messages
 - Test endpoint: `curl http://localhost:9050/server/load`
@@ -333,7 +333,7 @@ lsof -ti:9050 | xargs kill -9
 - Check EMDATA.txt exists with data
 - Open browser console (F12) for errors
 - Verify server loaded the data (check server console on startup)
-- Ensure server is running (`python3 LangFight.py`)
+- Ensure server is running (`python3 LangGames.py`)
 
 ## Development
 
@@ -349,7 +349,7 @@ lsof -ti:9050 | xargs kill -9
 
 **Test server:**
 ```bash
-python3 LangFight.py
+python3 LangGames.py
 # Visit http://localhost:9050
 ```
 
@@ -375,14 +375,14 @@ curl -X POST http://localhost:9050/server/save \
 
 - **Edit vocabulary**: `src/vocabulary.js`
 - **Modify game logic**: `src/game.js`
-- **Change server**: `LangFight.py`
+- **Change server**: `LangGames.py`
 - **Update encryption**: `encryption_manager.py` or `src/crypto.js`
 - **Modify styles**: `src/style.css`
 - **No build required** - just refresh browser!
 
 ### Adding New Endpoints
 
-Edit `LangFight.py` to add custom server routes:
+Edit `LangGames.py` to add custom server routes:
 ```python
 # In the CustomHTTPRequestHandler class
 # Add to do_GET method for GET requests
@@ -419,27 +419,27 @@ Made with ❤️ for language learners
 
 ## Docker Deployment
 
-To run LangFight in a Docker container, follow these steps:
+To run LangGames in a Docker container, follow these steps:
 
 1.  **Build the Docker Image**
 
-    Navigate to the root directory of the LangFight project (where `Dockerfile` is located) and run the following command to build the Docker image:
+    Navigate to the root directory of the LangGames project (where `Dockerfile` is located) and run the following command to build the Docker image:
 
     ```bash
-    docker build -t langfight .
+    docker build -t langgames .
     ```
 
-    This command builds an image named `langfight` from your `Dockerfile`.
+    This command builds an image named `langgames` from your `Dockerfile`.
 
 2.  **Run the Docker Container**
 
     Once the image is built, you can run the application in a Docker container using the following command:
 
     ```bash
-    docker run -p 9048:9048 langfight
+    docker run -p 9048:9048 langgames
     ```
 
-    -   `-p 9048:9048`: This maps port 9048 on your host machine to port 9048 inside the Docker container. LangFight runs on port 9048 by default.
+    -   `-p 9048:9048`: This maps port 9048 on your host machine to port 9048 inside the Docker container. LangGames runs on port 9048 by default.
 
     After running the container, you can access the game in your web browser at `http://localhost:9048`.
 
@@ -448,7 +448,7 @@ To run LangFight in a Docker container, follow these steps:
     The game generates an encryption key in `.env` and stores save data in `EMDATA.txt`. By default, these files are created inside the container, meaning they will be lost if the container is removed. To persist this data, you can mount a volume:
 
     ```bash
-    docker run -p 9048:9048 -v $(pwd)/data:/app langfight
+    docker run -p 9048:9048 -v $(pwd)/data:/app langgames
     ```
 
     This command mounts a local directory named `data` (which will be created in your current directory if it doesn't exist) to the `/app` directory inside the container. This way, `.env` and `EMDATA.txt` will be stored in your local `data` directory.

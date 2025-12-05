@@ -1,4 +1,4 @@
-# Deploy LangFight - 100% FREE Options
+# Deploy LangGames - 100% FREE Options
 
 ## ✅ Render.com (RECOMMENDED - FREE FOREVER)
 
@@ -9,16 +9,16 @@
 1. **Go to [render.com](https://render.com)**
 2. Sign up with GitHub (free)
 3. Click **"New +"** → **"Web Service"**
-4. Select your **LangFight** repository
+4. Select your **LangGames** repository
 5. Settings:
-   - **Name**: langfight
+   - **Name**: langgames
    - **Runtime**: Python 3
    - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `python LangFight.py`
+   - **Start Command**: `python LangGames.py`
    - **Plan**: Free
 6. Click **"Create Web Service"**
 
-Done! You'll get a URL like: `https://langfight.onrender.com`
+Done! You'll get a URL like: `https://langgames.onrender.com`
 
 ### Pros:
 - ✅ Actually free (not a trial)
@@ -83,19 +83,19 @@ For development and testing, this is **perfectly fine**.
 
 ## After Deploying to Render
 
-1. Get your Render URL: `https://langfight.onrender.com`
+1. Get your Render URL: `https://langgames.onrender.com`
 2. Update WalkerAuth `sites.json`:
 
 ```json
 {
-  "LangFight": {
-    "redirect_url": "https://langfight.onrender.com/oauth/callback",
-    "secret_key": "langfight_secret_key_12345"
+  "LangGames": {
+    "redirect_url": "https://langgames.onrender.com/oauth/callback",
+    "secret_key": "langgames_secret_key_12345"
   }
 }
 ```
 
-3. Test at: `https://walkerauth.walkerco.co?id=LangFight`
+3. Test at: `https://walkerauth.walkerco.co?id=LangGames`
 
 ---
 
