@@ -145,83 +145,39 @@ Shows detailed feedback:
 - Progress loaded from Supabase
 - Welcome back message shown
 
-## 🚀 Installation & Running
+## 🚀 Access & Play
 
 ### Requirements
-- Python 3.7+
 - Modern web browser (Chrome, Firefox, Safari, Edge)
-- Supabase account (for cloud save)
 - Internet connection (for WalkerAuth and Supabase)
+- WalkerAuth account (free registration)
 
-### Quick Start
+### How to Access
 
-1. **Clone the repository**
-```bash
-git clone <repository-url>
-cd LangFight
-```
-
-2. **Set up environment variables**
-
-Create a `.env` file in the project root:
-```bash
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_anon_key
-```
-
-3. **Run the game**
-```bash
-python3 LangFight.py
-```
-
-4. **Open in browser**
-- Automatically opens at `http://localhost:9048`
-- Or manually visit the URL shown in console
-
-### What Launches:
-- Local HTTP server on port 9048
-- Game interface with WalkerAuth login
-- API endpoints for Supabase integration
-- Auto-save system active
+Visit the deployed game at your hosting URL and sign in with WalkerAuth to start playing!
 
 ## 🗂️ File Structure
 
 ```
 LangFight/
-├── LangFight.py              # Main launcher (starts server)
-├── walkerauth_client.py      # WalkerAuth authentication client
-├── .env                      # Supabase credentials (gitignored)
 ├── src/                      # Game files
 │   ├── index.html           # Game UI and tutorial
 │   ├── game.js              # Core game logic & click-to-match
 │   ├── vocabulary.js        # Kannada vocabulary database
 │   ├── style.css            # Game styles & tutorial CSS
 │   └── Map.png              # Path background image
-├── .gitignore               # Protects .env and sensitive files
-├── README.md                # This file
-└── requirements.txt         # Python dependencies
+└── README.md                # This file
 ```
 
-## ⚙️ Configuration
+## ⚙️ Backend Configuration
 
-### Server Configuration
+### Server API
 
-The game automatically uses the current domain for API calls:
+The game automatically uses the current domain for API calls via dynamic routing.
 
-**`src/game.js`** (Lines 4-5):
-```javascript
-// Use current domain (works for both localhost and production)
-const SERVER_URL = window.location.origin;
-```
+### Supabase Database
 
-### Supabase Setup
-
-1. Create a [Supabase](https://supabase.com) project
-2. Create a table for game data (see schema below)
-3. Get your project URL and anon key
-4. Add to `.env` file
-
-**Supabase Table Schema:**
+**Required Table Schema:**
 ```sql
 CREATE TABLE game_data (
   user_id TEXT PRIMARY KEY,
@@ -234,14 +190,7 @@ CREATE TABLE game_data (
 );
 ```
 
-### Change Port
-
-Edit `LangFight.py`:
-```python
-PORT = 9048  # Change to your preferred port
-```
-
-Then update any hardcoded references if needed.
+This table stores all player progress linked to their WalkerAuth account.
 
 ## 🎨 Customization
 
@@ -318,32 +267,11 @@ Edit `src/index.html` (Lines 98-133):
 
 ## 🐛 Troubleshooting
 
-### Game won't start
-```bash
-# Make sure you're in the LangFight directory
-cd /path/to/LangFight
-
-# Check Python version
-python3 --version  # Should be 3.7+
-
-# Launch the game
-python3 LangFight.py
-```
-
-### Port already in use
-```bash
-# Kill process on port 9048
-lsof -ti:9048 | xargs kill -9
-
-# Or change the port in LangFight.py
-```
-
 ### Data not saving
-- Check `.env` file has correct Supabase credentials
 - Open browser console (F12) and check for errors
-- Verify Supabase table exists and is accessible
-- Check server console for error messages
-- Test Supabase connection: `curl http://localhost:9048/api/data/load?user_id=test`
+- Verify you're logged in with WalkerAuth
+- Check that Supabase connection is working
+- Ensure internet connection is stable
 
 ### Can't login with WalkerAuth
 - Ensure internet connection is active
@@ -362,21 +290,28 @@ lsof -ti:9048 | xargs kill -9
 - Make sure you're logged in with WalkerAuth
 - Verify data exists in Supabase for your user_id
 - Check browser console (F12) for errors
-- Ensure server is running: `python3 LangFight.py`
+- Try refreshing the page
 
 ### Vehicles moving too fast/slow
 - Use the **Speed Slider** in-game (1x-5x)
-- For learning mode adjustments, edit speed values in `src/game.js`
 - First 3 levels intentionally slower for beginners
+- Adjust speed in real-time while playing
+
+### Game not loading
+- Check internet connection
+- Clear browser cache
+- Try a different browser
+- Disable browser extensions that might interfere
+- Check browser console (F12) for error messages
 
 ## 🔒 Security Notes
 
-- **Supabase credentials** stored in `.env` file - keep it safe!
-- `.gitignore` protects `.env` from being committed
 - WalkerAuth handles secure authentication
 - User data isolated per account in Supabase
-- All API calls use user_id from localStorage (set by WalkerAuth)
-- No sensitive data stored in browser localStorage (only user_id, tokens)
+- All API calls authenticated via user tokens
+- No sensitive data stored in browser localStorage
+- HTTPS encryption for all network requests
+- Data privacy: only you can access your game progress
 
 ## 🤝 Contributing
 
@@ -392,7 +327,7 @@ Feel free to:
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test locally with `python3 LangFight.py`
+4. Test thoroughly in browser
 5. Submit a pull request
 
 ## 📜 License
@@ -414,39 +349,39 @@ Made with ❤️ for language learners
 - Supabase (cloud database)
 - WalkerAuth (authentication)
 
-## 🐳 Docker Deployment
+## 🚀 Deployment
 
-To run LangFight in a Docker container:
+The game can be deployed on any static hosting service or platform that supports Python web servers.
 
-### Build the Docker Image
+### Deployment Options
 
-```bash
-docker build -t langfight .
+**Recommended Platforms:**
+- Railway
+- Render
+- Heroku
+- DigitalOcean
+- AWS
+- Google Cloud Platform
+
+See deployment guides in the repository:
+- `DEPLOY_RAILWAY.md` - Railway deployment instructions
+- `DEPLOY_FREE.md` - Free hosting options
+
+### Environment Variables Required
+
+Configure these in your hosting platform:
 ```
-
-### Run the Docker Container
-
-```bash
-docker run -p 9048:9048 --env-file .env langfight
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_KEY=your_supabase_anon_key
 ```
-
-- `-p 9048:9048`: Maps port 9048 (host to container)
-- `--env-file .env`: Loads Supabase credentials from .env file
-
-### Access the Game
-
-Open your browser at `http://localhost:9048`
-
-### Notes
-- Fullscreen auto-toggle is disabled in Docker (`DISABLE_PYNPUT=1`)
-- You can still press `*` manually to toggle fullscreen
-- Make sure `.env` file exists with Supabase credentials before building
 
 ## 📚 Additional Documentation
 
-- **WalkerAuth Integration**: See `WALKERAUTH_INTEGRATION.md`
-- **Supabase Setup**: See `SUPABASE_SETUP.md`
-- **Deployment Guides**: See `DEPLOY_*.md` files
+For detailed setup and deployment instructions, see:
+- **WalkerAuth Integration**: `WALKERAUTH_INTEGRATION.md`
+- **Supabase Setup**: `SUPABASE_SETUP.md`
+- **Railway Deployment**: `DEPLOY_RAILWAY.md`
+- **Free Hosting Options**: `DEPLOY_FREE.md`
 
 ## 🎯 Roadmap
 
