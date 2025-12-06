@@ -446,6 +446,40 @@ function showWelcomeBackMessage() {
     }, 2000);
 }
 
+// Device detection
+const DeviceInfo = {
+    isMobile() {
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        // Check for mobile devices
+        return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+    },
+
+    isTablet() {
+        const userAgent = navigator.userAgent.toLowerCase();
+        return /(ipad|tablet|playbook|silk)|(android(?!.*mobile))/i.test(userAgent);
+    },
+
+    getDeviceType() {
+        if (this.isMobile() && !this.isTablet()) return 'mobile';
+        if (this.isTablet()) return 'tablet';
+        return 'desktop';
+    },
+
+    applyMobileStyles() {
+        const deviceType = this.getDeviceType();
+        document.body.classList.add(`device-${deviceType}`);
+
+        if (deviceType === 'mobile') {
+            // Apply mobile-specific adjustments
+            const canvas = document.getElementById('gameCanvas');
+            if (canvas) {
+                canvas.width = 800;
+                canvas.height = 800;
+            }
+        }
+    }
+};
+
 // Tutorial management
 const Tutorial = {
     currentStep: 0,
@@ -454,6 +488,8 @@ const Tutorial = {
     show() {
         document.getElementById('tutorialOverlay').style.display = 'flex';
         game.isGameOver = true; // Pause game during tutorial
+        this.currentStep = 0; // Reset to first step
+        this.updateStep(); // Update display
     },
 
     hide() {
@@ -544,6 +580,9 @@ async function initGame() {
     gameLoop();
     setupEventListeners();
 
+    // Detect device and apply mobile styles
+    DeviceInfo.applyMobileStyles();
+
     // Initialize tutorial
     Tutorial.init();
 
@@ -553,6 +592,11 @@ async function initGame() {
             Tutorial.show();
         }, 500);
     }
+
+    // Tutorial reopen button
+    document.getElementById('tutorialBtn').addEventListener('click', () => {
+        Tutorial.show();
+    });
 
     // Show welcome back message AFTER game loop starts (if data was restored)
     if (hasRestoredData) {

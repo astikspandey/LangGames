@@ -8,15 +8,18 @@
 </head>
 <body>
     <div class="game-container">
-        <div class="header">
-            <h1>LangGames</h1>
-            <!-- User Profile Section -->
+        <!-- User Profile Section - Top Right Corner -->
+        <div class="top-right-user">
             <div class="user-profile" id="userProfile" style="display: none;">
                 <img id="userAvatar" class="user-avatar" src="" alt="User">
                 <span id="userName" class="user-name"></span>
                 <button id="logoutBtn" class="logout-btn">Logout</button>
             </div>
             <button id="loginBtn" class="login-btn" style="display: none;">Sign In</button>
+        </div>
+
+        <div class="header">
+            <h1>LangGames</h1>
             <div class="stats">
                 <div class="stat">
                     <span class="label">Score:</span>
@@ -43,6 +46,9 @@
                     <label for="levelSlider" class="slider-label">Level:</label>
                     <input type="range" id="levelSlider" min="1" max="20" value="1" class="slider">
                     <span id="levelStatus" class="level-status">1</span>
+                </div>
+                <div class="tutorial-control">
+                    <button id="tutorialBtn" class="tutorial-reopen-btn" title="View Tutorial">❓</button>
                 </div>
             </div>
         </div>
