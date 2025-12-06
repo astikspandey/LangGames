@@ -71,7 +71,7 @@ except ImportError:
     PASTEBIN_AVAILABLE = False
     print("Warning: Pastebin client not available")
 
-PORT = int(os.getenv('PORT', '9048'))
+PORT = int(os.getenv('PORT', '2937'))
 HOST = os.getenv('HOST', '0.0.0.0')
 
 # WalkerAuth Configuration

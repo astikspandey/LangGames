@@ -550,6 +550,14 @@ const Tutorial = {
         document.getElementById('tutorialSkip').addEventListener('click', () => {
             this.hide();
         });
+
+        // Tutorial reopen button
+        const tutorialBtn = document.getElementById('tutorialBtn');
+        if (tutorialBtn) {
+            tutorialBtn.addEventListener('click', () => {
+                this.show();
+            });
+        }
     }
 };
 
@@ -592,11 +600,6 @@ async function initGame() {
             Tutorial.show();
         }, 500);
     }
-
-    // Tutorial reopen button
-    document.getElementById('tutorialBtn').addEventListener('click', () => {
-        Tutorial.show();
-    });
 
     // Show welcome back message AFTER game loop starts (if data was restored)
     if (hasRestoredData) {
