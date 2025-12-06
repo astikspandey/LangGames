@@ -141,8 +141,6 @@ const game = {
     animationFrame: null,
     draggedElement: null,
     canvasRect: null,
-    cpuMode: false,
-    cpuInterval: null,
     speedMultiplier: 1,
     savedLevel: 1, // Level to return to if player loses immediately after skip
     hasPlayedCurrentLevel: false, // Track if player has played current level
@@ -634,11 +632,6 @@ function resetGame(skipLevelReset = false) {
     game.missedTanks = [];
     game.isGameOver = false;
 
-    // Restart CPU mode if it was active
-    if (game.cpuMode) {
-        startCPUMode();
-    }
-
     updateUI();
     hideGameOver();
 }
@@ -973,7 +966,6 @@ function loseLife() {
 function gameOver() {
     game.isGameOver = true;
     clearInterval(game.spawnInterval);
-    stopCPUMode();
 
     // If player hasn't played current level (lost immediately after skip), revert to saved level
     if (!game.hasPlayedCurrentLevel) {
@@ -1217,75 +1209,6 @@ function skipToLevel(targetLevel) {
     }
 }
 
-// CPU Mode functions
-function toggleCPU() {
-    const password = prompt('Enter password to enable CPU mode:');
-
-    if (password === 'abc123') {
-        game.cpuMode = !game.cpuMode;
-
-        const cpuBtn = document.getElementById('cpuBtn');
-        const cpuStatus = document.getElementById('cpuStatus');
-
-        if (game.cpuMode) {
-            cpuBtn.classList.add('active');
-            cpuStatus.textContent = 'AUTO';
-            startCPUMode();
-        } else {
-            cpuBtn.classList.remove('active');
-            cpuStatus.textContent = '';
-            stopCPUMode();
-        }
-    } else if (password !== null) {
-        alert('Incorrect password!');
-    }
-}
-
-function startCPUMode() {
-    if (game.cpuInterval) {
-        clearInterval(game.cpuInterval);
-    }
-
-    // CPU checks for tanks every 100ms
-    game.cpuInterval = setInterval(() => {
-        if (!game.isGameOver && game.cpuMode && game.activeTanks.length > 0) {
-            cpuPlayTurn();
-        }
-    }, 100);
-}
-
-function stopCPUMode() {
-    if (game.cpuInterval) {
-        clearInterval(game.cpuInterval);
-        game.cpuInterval = null;
-    }
-}
-
-function cpuPlayTurn() {
-    // Find the tank that has progressed past halfway (50% of the path)
-    let closestTank = null;
-    let maxProgress = -1;
-
-    const halfwayPoint = pathWaypoints.length / 2;
-
-    for (const tank of game.activeTanks) {
-        const totalProgress = tank.waypointIndex + (tank.progress / 100);
-
-        // Only consider tanks that have passed halfway
-        if (totalProgress >= halfwayPoint) {
-            if (totalProgress > maxProgress) {
-                maxProgress = totalProgress;
-                closestTank = tank;
-            }
-        }
-    }
-
-    if (closestTank) {
-        // Automatically match it
-        handleCorrectMatch(closestTank, closestTank.vocabulary.english);
-    }
-}
-
 // Setup event listeners
 function setupEventListeners() {
     document.getElementById('restartBtn').addEventListener('click', () => {
@@ -1294,9 +1217,6 @@ function setupEventListeners() {
         startSpawning();
         gameLoop();
     });
-
-    // CPU button
-    document.getElementById('cpuBtn').addEventListener('click', toggleCPU);
 
     // Speed slider
     document.getElementById('speedSlider').addEventListener('input', (e) => {

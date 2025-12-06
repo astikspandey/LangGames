@@ -67,7 +67,6 @@ For new users (no saved data), an interactive 4-step tutorial appears:
 - **Lives** - You have 3 hearts ❤️❤️❤️
 
 ### Advanced Features
-- **CPU Mode** - Auto-play mode (Password: `abc123`)
 - **Fullscreen** - Press `*` key to toggle fullscreen
 - **Hover Hints** - Hover over Kannada words for 0.5s to see English translation
 
