@@ -5,6 +5,27 @@
 const SERVER_URL = window.location.origin;
 // ============================================================
 
+// Ad configuration - Check if config.txt exists
+let ADS_ENABLED = false;
+
+async function checkAdConfig() {
+    try {
+        const response = await fetch('config.txt');
+        if (response.ok) {
+            ADS_ENABLED = true;
+            document.body.classList.add('ads-enabled');
+            console.log('✓ Ads enabled (config.txt found)');
+        } else {
+            ADS_ENABLED = false;
+            console.log('ℹ Ads disabled (config.txt not found)');
+        }
+    } catch (error) {
+        ADS_ENABLED = false;
+        console.log('ℹ Ads disabled (config.txt not found)');
+    }
+    return ADS_ENABLED;
+}
+
 // Data persistence module (Supabase with localStorage fallback)
 const DataManager = {
     apiUrl: `${SERVER_URL}/api`,
@@ -566,9 +587,10 @@ const DeviceInfo = {
                 const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
                 const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
 
-                // Calculate available space (accounting for header and sidebar)
+                // Calculate available space (accounting for header, sidebar, and ad space if enabled)
+                const adSpace = ADS_ENABLED ? 100 : 0; // Reserve 100px for ads only if config.txt exists
                 const availableWidth = vw - 20; // 20px for padding
-                const availableHeight = vh - 250; // Approximate space for header + sidebar
+                const availableHeight = vh - 250 - adSpace; // Header + sidebar + ad space
 
                 // Use smaller dimension to keep it square and visible
                 const size = Math.min(availableWidth, availableHeight, 800);
@@ -576,7 +598,11 @@ const DeviceInfo = {
                 canvas.width = size;
                 canvas.height = size;
 
-                console.log(`Mobile canvas set to ${size}x${size}px`);
+                if (ADS_ENABLED) {
+                    console.log(`Mobile canvas set to ${size}x${size}px (${adSpace}px reserved for ads)`);
+                } else {
+                    console.log(`Mobile canvas set to ${size}x${size}px (ads disabled)`);
+                }
             }
 
             // Prevent pull-to-refresh on mobile
@@ -678,6 +704,9 @@ const Tutorial = {
 
 // Initialize game
 async function initGame() {
+    // Check if ads should be enabled (config.txt exists)
+    await checkAdConfig();
+
     game.canvas = document.getElementById('gameCanvas');
     game.ctx = game.canvas.getContext('2d');
     game.canvasRect = game.canvas.getBoundingClientRect();
@@ -714,14 +743,19 @@ async function initGame() {
             if (canvas) {
                 const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
                 const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+                const adSpace = ADS_ENABLED ? 100 : 0; // Only reserve space if ads enabled
                 const availableWidth = vw - 20;
-                const availableHeight = vh - 250;
+                const availableHeight = vh - 250 - adSpace;
                 const size = Math.min(availableWidth, availableHeight, 800);
 
                 canvas.width = size;
                 canvas.height = size;
 
-                console.log(`Canvas resized to ${size}x${size}px`);
+                if (ADS_ENABLED) {
+                    console.log(`Canvas resized to ${size}x${size}px (${adSpace}px reserved for ads)`);
+                } else {
+                    console.log(`Canvas resized to ${size}x${size}px (ads disabled)`);
+                }
             }
         }
     });

@@ -17,7 +17,13 @@
         <button id="loginBtn" class="login-btn" style="display: none;">Sign In</button>
     </div>
 
-    <div class="game-container">
+    <div class="desktop-layout-wrapper">
+        <!-- Desktop Ad Container (Left Side) -->
+        <div class="ad-container-desktop ad-left" id="adContainerDesktopLeft">
+            <div class="ad-placeholder">Advertisement</div>
+        </div>
+
+        <div class="game-container">
         <div class="header">
             <h1>LangGames</h1>
             <div class="stats">
@@ -78,6 +84,11 @@
             <div class="canvas-container">
                 <canvas id="gameCanvas" width="1000" height="1000"></canvas>
             </div>
+        </div>
+
+        <!-- Ad Space (Mobile Only - Bottom) -->
+        <div class="ad-container-mobile" id="adContainerMobile">
+            <div class="ad-placeholder">Advertisement Space</div>
         </div>
 
         <div class="game-over-screen" id="gameOverScreen" style="display: none;">
@@ -150,6 +161,13 @@
         </div>
 
     </div>
+
+    <!-- Desktop Ad Container (Right Side) -->
+    <div class="ad-container-desktop ad-right" id="adContainerDesktopRight">
+        <div class="ad-placeholder">Advertisement</div>
+    </div>
+
+    </div> <!-- End desktop-layout-wrapper -->
 
     <script src="vocabulary.js"></script>
     <script src="crypto.js"></script>

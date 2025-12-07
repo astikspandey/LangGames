@@ -20,6 +20,15 @@ body {
     touch-action: manipulation;
 }
 
+/* Desktop Layout Wrapper - Contains game + side ads */
+.desktop-layout-wrapper {
+    display: flex;
+    gap: 20px;
+    max-width: 100%;
+    width: 100%;
+    align-items: flex-start;
+}
+
 .game-container {
     background: #fff;
     border-radius: 20px;
@@ -359,10 +368,69 @@ body {
 /* Load Kannada font */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;600;700&display=swap');
 
+/* Mobile Ad Container - Bottom, hidden by default */
+.ad-container-mobile {
+    display: none;
+    width: 100%;
+    background: #f5f5f5;
+    border-top: 2px solid #ddd;
+    overflow: hidden;
+}
+
+/* Desktop Ad Containers - Sides, hidden by default */
+.ad-container-desktop {
+    display: none;
+    width: 160px;
+    min-width: 160px;
+    background: #f5f5f5;
+    border-radius: 10px;
+    border: 2px solid #ddd;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+/* Show ads only when config.txt exists (ads-enabled class added to body) */
+body.ads-enabled .ad-container-desktop {
+    display: block;
+}
+
+.ad-container-desktop.ad-left {
+    order: -1;
+}
+
+.ad-container-desktop.ad-right {
+    order: 1;
+}
+
+.ad-placeholder {
+    min-height: 600px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+}
+
+.ad-container-mobile .ad-placeholder {
+    height: 100px;
+    min-height: 100px;
+    writing-mode: horizontal-tb;
+}
+
 /* Mobile Device Specific Styles */
 .device-mobile body {
     padding: 0;
     overflow: hidden;
+}
+
+.device-mobile .desktop-layout-wrapper {
+    flex-direction: column;
+    gap: 0;
 }
 
 .device-mobile .game-container {
@@ -372,6 +440,16 @@ body {
     border-radius: 0;
     display: flex;
     flex-direction: column;
+}
+
+body.ads-enabled.device-mobile .ad-container-mobile {
+    display: block;
+    flex-shrink: 0;
+    height: 100px;
+}
+
+body.ads-enabled.device-mobile .ad-container-desktop {
+    display: none;
 }
 
 .device-mobile .header {
@@ -626,6 +704,11 @@ body {
         padding: 10px;
     }
 
+    .ad-container-desktop {
+        width: 120px;
+        min-width: 120px;
+    }
+
     .header {
         flex-direction: column;
         gap: 12px;
@@ -692,6 +775,11 @@ body {
         overflow: hidden;
     }
 
+    .desktop-layout-wrapper {
+        flex-direction: column;
+        gap: 0;
+    }
+
     .game-container {
         max-width: 100vw;
         width: 100vw;
@@ -699,6 +787,16 @@ body {
         border-radius: 0;
         display: flex;
         flex-direction: column;
+    }
+
+    body.ads-enabled .ad-container-mobile {
+        display: block;
+        flex-shrink: 0;
+        height: 100px;
+    }
+
+    body.ads-enabled .ad-container-desktop {
+        display: none;
     }
 
     .header {
