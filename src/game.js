@@ -43,20 +43,27 @@ const DataManager = {
         if (!this.offlineModeIndicator) {
             this.offlineModeIndicator = document.createElement('div');
             this.offlineModeIndicator.id = 'offlineIndicator';
-            this.offlineModeIndicator.innerHTML = '📵 Offline Mode - Saving Locally';
+            this.offlineModeIndicator.innerHTML = '📵 Offline Mode';
+
+            // Check if mobile for responsive sizing
+            const deviceType = DeviceInfo.getDeviceType();
+            const isMobile = deviceType === 'mobile';
+
             this.offlineModeIndicator.style.cssText = `
                 position: fixed;
-                top: 50px;
-                right: 10px;
+                top: ${isMobile ? '40px' : '50px'};
+                right: ${isMobile ? '5px' : '10px'};
                 background: rgba(255, 152, 0, 0.95);
                 color: white;
-                padding: 10px 15px;
-                border-radius: 8px;
-                font-size: 14px;
+                padding: ${isMobile ? '6px 10px' : '10px 15px'};
+                border-radius: ${isMobile ? '6px' : '8px'};
+                font-size: ${isMobile ? '11px' : '14px'};
                 font-weight: bold;
                 z-index: 1000;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.3);
                 animation: slideIn 0.3s ease-out;
+                max-width: ${isMobile ? '120px' : 'none'};
+                text-align: center;
             `;
             document.body.appendChild(this.offlineModeIndicator);
         }
@@ -555,9 +562,35 @@ const DeviceInfo = {
             // Apply mobile-specific adjustments
             const canvas = document.getElementById('gameCanvas');
             if (canvas) {
-                canvas.width = 800;
-                canvas.height = 800;
+                // Use viewport-based sizing for better mobile support
+                const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+                const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+
+                // Calculate available space (accounting for header and sidebar)
+                const availableWidth = vw - 20; // 20px for padding
+                const availableHeight = vh - 250; // Approximate space for header + sidebar
+
+                // Use smaller dimension to keep it square and visible
+                const size = Math.min(availableWidth, availableHeight, 800);
+
+                canvas.width = size;
+                canvas.height = size;
+
+                console.log(`Mobile canvas set to ${size}x${size}px`);
             }
+
+            // Prevent pull-to-refresh on mobile
+            document.body.style.overscrollBehavior = 'none';
+
+            // Prevent double-tap zoom
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', (event) => {
+                const now = Date.now();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, { passive: false });
         }
     }
 };
@@ -672,6 +705,26 @@ async function initGame() {
 
     // Detect device and apply mobile styles
     DeviceInfo.applyMobileStyles();
+
+    // Handle window resize and orientation changes for mobile
+    window.addEventListener('resize', () => {
+        const deviceType = DeviceInfo.getDeviceType();
+        if (deviceType === 'mobile') {
+            const canvas = document.getElementById('gameCanvas');
+            if (canvas) {
+                const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+                const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+                const availableWidth = vw - 20;
+                const availableHeight = vh - 250;
+                const size = Math.min(availableWidth, availableHeight, 800);
+
+                canvas.width = size;
+                canvas.height = size;
+
+                console.log(`Canvas resized to ${size}x${size}px`);
+            }
+        }
+    });
 
     // Initialize tutorial
     Tutorial.init();

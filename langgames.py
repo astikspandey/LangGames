@@ -71,8 +71,15 @@ except ImportError:
     PASTEBIN_AVAILABLE = False
     print("Warning: Pastebin client not available")
 
+# Check for 'net' parameter to enable network hosting
+if 'net' in sys.argv:
+    HOST = '0.0.0.0'  # Bind to all network interfaces
+    print("Network mode enabled - accessible from other devices")
+else:
+    HOST = '127.0.0.1'  # Localhost only
+    print("Local mode - accessible only from this computer")
+
 PORT = int(os.getenv('PORT', '2937'))
-HOST = os.getenv('HOST', '0.0.0.0')
 
 # WalkerAuth Configuration
 WALKERAUTH_SECRET_KEY = "langgames_secret_key_12345"
@@ -412,12 +419,31 @@ def press_asterisk():
 def start_server():
     """Start the HTTP server"""
     with socketserver.TCPServer((HOST, PORT), CustomHTTPRequestHandler) as httpd:
-        url = f"http://{HOST}:{PORT}/"
+        # Show appropriate URL based on hosting mode
+        if HOST == '0.0.0.0':
+            # Get local IP for network access
+            import socket
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.connect(("8.8.8.8", 80))
+                local_ip = s.getsockname()[0]
+                s.close()
+                url = f"http://{local_ip}:{PORT}/"
+            except:
+                local_ip = "your-ip-address"
+                url = f"http://{local_ip}:{PORT}/"
+        else:
+            url = f"http://localhost:{PORT}/"
 
         print("=" * 60)
-        print("LangGames - Local Game Server")
+        print("LangGames - Game Server")
         print("=" * 60)
-        print(f"Server: {url}")
+        print(f"Local URL: http://localhost:{PORT}/")
+        if HOST == '0.0.0.0':
+            print(f"Network URL: {url}")
+            print(f"  (Share this URL with others on your network)")
+        else:
+            print(f"  (Local access only - use 'net' parameter for network access)")
 
         if supabase_client:
             print(f"Database: ✓ Encrypted pastebin connected")
@@ -436,9 +462,9 @@ def start_server():
         print("=" * 60)
         print("")
 
-        # Open browser only if binding to localhost
-        if HOST in ("127.0.0.1", "localhost"):
-            webbrowser.open(url)
+        # Open browser only in local mode
+        if HOST == '127.0.0.1':
+            webbrowser.open(f"http://localhost:{PORT}/")
 
         # Start thread to press * after delay (only if supported)
         if Controller is not None:
