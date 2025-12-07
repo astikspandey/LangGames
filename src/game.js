@@ -589,19 +589,24 @@ const DeviceInfo = {
 
                 // Calculate available space (accounting for header, sidebar, and ad space if enabled)
                 const adSpace = ADS_ENABLED ? 100 : 0; // Reserve 100px for ads only if config.txt exists
-                const availableWidth = vw - 20; // 20px for padding
-                const availableHeight = vh - 250 - adSpace; // Header + sidebar + ad space
+                const availableWidth = vw - 30; // 30px for padding
+                const availableHeight = vh - 300 - adSpace; // Header + sidebar + ad space
 
-                // Use smaller dimension to keep it square and visible
-                const size = Math.min(availableWidth, availableHeight, 800);
+                // Calculate display size (how big to show it)
+                const displaySize = Math.min(availableWidth, availableHeight, 500);
 
-                canvas.width = size;
-                canvas.height = size;
+                // Keep internal resolution at 1000x1000 (game is coded for this)
+                canvas.width = 1000;
+                canvas.height = 1000;
+
+                // Set CSS display size to scale it down
+                canvas.style.width = displaySize + 'px';
+                canvas.style.height = displaySize + 'px';
 
                 if (ADS_ENABLED) {
-                    console.log(`Mobile canvas set to ${size}x${size}px (${adSpace}px reserved for ads)`);
+                    console.log(`Mobile canvas: 1000x1000 internal, ${displaySize}x${displaySize}px display (${adSpace}px reserved for ads)`);
                 } else {
-                    console.log(`Mobile canvas set to ${size}x${size}px (ads disabled)`);
+                    console.log(`Mobile canvas: 1000x1000 internal, ${displaySize}x${displaySize}px display (ads disabled)`);
                 }
             }
 
@@ -744,17 +749,22 @@ async function initGame() {
                 const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
                 const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
                 const adSpace = ADS_ENABLED ? 100 : 0; // Only reserve space if ads enabled
-                const availableWidth = vw - 20;
-                const availableHeight = vh - 250 - adSpace;
-                const size = Math.min(availableWidth, availableHeight, 800);
+                const availableWidth = vw - 30;
+                const availableHeight = vh - 300 - adSpace;
+                const displaySize = Math.min(availableWidth, availableHeight, 500);
 
-                canvas.width = size;
-                canvas.height = size;
+                // Keep internal resolution at 1000x1000
+                canvas.width = 1000;
+                canvas.height = 1000;
+
+                // Set CSS display size to scale it down
+                canvas.style.width = displaySize + 'px';
+                canvas.style.height = displaySize + 'px';
 
                 if (ADS_ENABLED) {
-                    console.log(`Canvas resized to ${size}x${size}px (${adSpace}px reserved for ads)`);
+                    console.log(`Canvas resized: 1000x1000 internal, ${displaySize}x${displaySize}px display (${adSpace}px reserved for ads)`);
                 } else {
-                    console.log(`Canvas resized to ${size}x${size}px (ads disabled)`);
+                    console.log(`Canvas resized: 1000x1000 internal, ${displaySize}x${displaySize}px display (ads disabled)`);
                 }
             }
         }

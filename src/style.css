@@ -491,6 +491,7 @@ body.ads-enabled.device-mobile .ad-container-desktop {
     display: flex;
     flex-direction: column-reverse;
     overflow: hidden;
+    min-height: 0; /* Important for flex children */
 }
 
 .device-mobile .sidebar {
@@ -532,14 +533,12 @@ body.ads-enabled.device-mobile .ad-container-desktop {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    min-height: 0; /* Important for flex children */
 }
 
 .device-mobile #gameCanvas {
-    max-width: 100%;
-    max-height: 100%;
-    width: auto;
-    height: auto;
-    object-fit: contain;
+    display: block;
+    margin: 0 auto;
 }
 
 .device-mobile .top-right-user {
@@ -830,6 +829,7 @@ body.ads-enabled.device-mobile .ad-container-desktop {
         flex: 1;
         flex-direction: column-reverse;
         overflow: hidden;
+        min-height: 0; /* Important for flex children */
     }
 
     .sidebar {
@@ -870,14 +870,12 @@ body.ads-enabled.device-mobile .ad-container-desktop {
         align-items: center;
         justify-content: center;
         overflow: hidden;
+        min-height: 0; /* Important for flex children */
     }
 
     #gameCanvas {
-        max-width: 100%;
-        max-height: 100%;
-        width: auto !important;
-        height: auto !important;
-        object-fit: contain;
+        display: block;
+        margin: 0 auto;
     }
 
     .top-right-user {
