@@ -7,6 +7,7 @@ const SERVER_URL = window.location.origin;
 
 // Ad configuration - Check if config.txt exists
 let ADS_ENABLED = false;
+let OFFLINE_MODE = false;
 
 async function checkAdConfig() {
     try {
@@ -24,6 +25,25 @@ async function checkAdConfig() {
         console.log('ℹ Ads disabled (config.txt not found)');
     }
     return ADS_ENABLED;
+}
+
+async function checkOfflineMode() {
+    try {
+        const response = await fetch('/api/offline-mode');
+        if (response.ok) {
+            const data = await response.json();
+            OFFLINE_MODE = data.offline;
+            if (OFFLINE_MODE) {
+                console.log('✓ Offline mode enabled - using localStorage only');
+            } else {
+                console.log('ℹ Online mode - using Supabase');
+            }
+        }
+    } catch (error) {
+        OFFLINE_MODE = false;
+        console.log('ℹ Online mode - using Supabase');
+    }
+    return OFFLINE_MODE;
 }
 
 // Data persistence module (Supabase with localStorage fallback)
@@ -115,7 +135,16 @@ const DataManager = {
             }
         };
 
-        // Try Supabase first
+        // If offline mode is enabled, use localStorage only
+        if (OFFLINE_MODE) {
+            if (!this.isOfflineMode) {
+                this.isOfflineMode = true;
+                this.showOfflineIndicator();
+            }
+            return this.saveToLocalStorage(gameData);
+        }
+
+        // Try Supabase (no fallback unless offline mode enabled)
         try {
             const response = await fetch(`${this.apiUrl}/data/save`, {
                 method: 'POST',
@@ -125,26 +154,14 @@ const DataManager = {
 
             if (response.ok) {
                 console.log('✓ Game data saved to Supabase');
-                // If we were in offline mode, we're back online now
-                if (this.isOfflineMode) {
-                    this.isOfflineMode = false;
-                    this.hideOfflineIndicator();
-                    console.log('✓ Back online - Supabase connection restored');
-                }
                 return true;
             } else {
-                throw new Error('Server responded with error');
+                console.error('✗ Failed to save game data (Supabase error)');
+                return false;
             }
         } catch (error) {
-            // Supabase failed, fallback to localStorage
-            console.error('✗ Supabase unavailable, using localStorage fallback:', error);
-
-            if (!this.isOfflineMode) {
-                this.isOfflineMode = true;
-                this.showOfflineIndicator();
-            }
-
-            return this.saveToLocalStorage(gameData);
+            console.error('✗ Failed to save game data (Supabase unavailable):', error);
+            return false;
         }
     },
 
@@ -153,7 +170,16 @@ const DataManager = {
         const userEmail = localStorage.getItem('user_email');
         const userId = userEmail || localStorage.getItem('user_id') || 'default_user';
 
-        // Try Supabase first
+        // If offline mode is enabled, use localStorage only
+        if (OFFLINE_MODE) {
+            if (!this.isOfflineMode) {
+                this.isOfflineMode = true;
+                this.showOfflineIndicator();
+            }
+            return this.loadFromLocalStorage();
+        }
+
+        // Try Supabase (no fallback unless offline mode enabled)
         try {
             const response = await fetch(`${this.apiUrl}/data/load?user_id=${encodeURIComponent(userId)}`);
 
@@ -161,31 +187,18 @@ const DataManager = {
                 const data = await response.json();
                 if (data && Object.keys(data).length > 0) {
                     console.log('✓ Game data loaded from Supabase');
-                    // If we were in offline mode, we're back online now
-                    if (this.isOfflineMode) {
-                        this.isOfflineMode = false;
-                        this.hideOfflineIndicator();
-                        console.log('✓ Back online - Supabase connection restored');
-                    }
                     return data;
                 } else {
-                    console.log('ℹ No saved game data found in Supabase');
-                    // Try localStorage as fallback
-                    return this.loadFromLocalStorage();
+                    console.log('ℹ No saved game data found');
+                    return null;
                 }
             } else {
-                throw new Error('Server responded with error');
+                console.error('✗ Failed to load game data (Supabase error)');
+                return null;
             }
         } catch (error) {
-            // Supabase failed, fallback to localStorage
-            console.error('✗ Supabase unavailable, using localStorage fallback:', error);
-
-            if (!this.isOfflineMode) {
-                this.isOfflineMode = true;
-                this.showOfflineIndicator();
-            }
-
-            return this.loadFromLocalStorage();
+            console.error('✗ Failed to load game data (Supabase unavailable):', error);
+            return null;
         }
     },
 
@@ -711,6 +724,9 @@ const Tutorial = {
 async function initGame() {
     // Check if ads should be enabled (config.txt exists)
     await checkAdConfig();
+
+    // Check if offline mode is enabled (server started with 'offline' param)
+    await checkOfflineMode();
 
     game.canvas = document.getElementById('gameCanvas');
     game.ctx = game.canvas.getContext('2d');
