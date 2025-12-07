@@ -5,10 +5,69 @@
 const SERVER_URL = window.location.origin;
 // ============================================================
 
-// Data persistence module (Supabase only via server)
+// Data persistence module (Supabase with localStorage fallback)
 const DataManager = {
     apiUrl: `${SERVER_URL}/api`,
     autoSaveInterval: null,
+    isOfflineMode: false,
+    offlineModeIndicator: null,
+
+    // LocalStorage fallback functions
+    saveToLocalStorage(gameData) {
+        try {
+            localStorage.setItem('langfight_gamedata', JSON.stringify(gameData));
+            console.log('✓ Game data saved to localStorage (offline mode)');
+            return true;
+        } catch (error) {
+            console.error('✗ Failed to save to localStorage:', error);
+            return false;
+        }
+    },
+
+    loadFromLocalStorage() {
+        try {
+            const data = localStorage.getItem('langfight_gamedata');
+            if (data) {
+                const gameData = JSON.parse(data);
+                console.log('✓ Game data loaded from localStorage (offline mode)');
+                return gameData;
+            }
+            return null;
+        } catch (error) {
+            console.error('✗ Failed to load from localStorage:', error);
+            return null;
+        }
+    },
+
+    showOfflineIndicator() {
+        if (!this.offlineModeIndicator) {
+            this.offlineModeIndicator = document.createElement('div');
+            this.offlineModeIndicator.id = 'offlineIndicator';
+            this.offlineModeIndicator.innerHTML = '📵 Offline Mode - Saving Locally';
+            this.offlineModeIndicator.style.cssText = `
+                position: fixed;
+                top: 50px;
+                right: 10px;
+                background: rgba(255, 152, 0, 0.95);
+                color: white;
+                padding: 10px 15px;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: bold;
+                z-index: 1000;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                animation: slideIn 0.3s ease-out;
+            `;
+            document.body.appendChild(this.offlineModeIndicator);
+        }
+    },
+
+    hideOfflineIndicator() {
+        if (this.offlineModeIndicator) {
+            this.offlineModeIndicator.remove();
+            this.offlineModeIndicator = null;
+        }
+    },
 
     async saveGameData() {
         // Get user_id from localStorage (WalkerAuth) or use default
@@ -28,6 +87,7 @@ const DataManager = {
             }
         };
 
+        // Try Supabase first
         try {
             const response = await fetch(`${this.apiUrl}/data/save`, {
                 method: 'POST',
@@ -37,43 +97,67 @@ const DataManager = {
 
             if (response.ok) {
                 console.log('✓ Game data saved to Supabase');
+                // If we were in offline mode, we're back online now
+                if (this.isOfflineMode) {
+                    this.isOfflineMode = false;
+                    this.hideOfflineIndicator();
+                    console.log('✓ Back online - Supabase connection restored');
+                }
                 return true;
             } else {
-                const error = await response.json();
-                console.error('✗ Failed to save game data:', error);
-                return false;
+                throw new Error('Server responded with error');
             }
         } catch (error) {
-            console.error('✗ Server error while saving:', error);
-            return false;
+            // Supabase failed, fallback to localStorage
+            console.error('✗ Supabase unavailable, using localStorage fallback:', error);
+
+            if (!this.isOfflineMode) {
+                this.isOfflineMode = true;
+                this.showOfflineIndicator();
+            }
+
+            return this.saveToLocalStorage(gameData);
         }
     },
 
     async loadGameData() {
-        try {
-            // Get user_id from localStorage (WalkerAuth) or use default
-            const userEmail = localStorage.getItem('user_email');
-            const userId = userEmail || localStorage.getItem('user_id') || 'default_user';
+        // Get user_id from localStorage (WalkerAuth) or use default
+        const userEmail = localStorage.getItem('user_email');
+        const userId = userEmail || localStorage.getItem('user_id') || 'default_user';
 
+        // Try Supabase first
+        try {
             const response = await fetch(`${this.apiUrl}/data/load?user_id=${encodeURIComponent(userId)}`);
 
             if (response.ok) {
                 const data = await response.json();
                 if (data && Object.keys(data).length > 0) {
                     console.log('✓ Game data loaded from Supabase');
+                    // If we were in offline mode, we're back online now
+                    if (this.isOfflineMode) {
+                        this.isOfflineMode = false;
+                        this.hideOfflineIndicator();
+                        console.log('✓ Back online - Supabase connection restored');
+                    }
                     return data;
                 } else {
-                    console.log('ℹ No saved game data found');
-                    return null;
+                    console.log('ℹ No saved game data found in Supabase');
+                    // Try localStorage as fallback
+                    return this.loadFromLocalStorage();
                 }
             } else {
-                const error = await response.json();
-                console.error('✗ Failed to load game data:', error);
-                return null;
+                throw new Error('Server responded with error');
             }
         } catch (error) {
-            console.error('✗ Server error while loading:', error);
-            return null;
+            // Supabase failed, fallback to localStorage
+            console.error('✗ Supabase unavailable, using localStorage fallback:', error);
+
+            if (!this.isOfflineMode) {
+                this.isOfflineMode = true;
+                this.showOfflineIndicator();
+            }
+
+            return this.loadFromLocalStorage();
         }
     },
 
@@ -620,7 +704,8 @@ function resetGame(skipLevelReset = false) {
     // Only reset score/lives, keep level if skipLevelReset is true
     if (!skipLevelReset) {
         game.score = 0;
-        game.level = 1;
+        // Keep current level - don't reset to 1
+        // game.level = 1; // REMOVED - now retries current level
     }
 
     game.lives = 3;
@@ -979,6 +1064,10 @@ function gameOver() {
     document.getElementById('finalScore').textContent = game.score;
     document.getElementById('finalLevel').textContent = game.level;
 
+    // Update restart button text to show current level
+    const restartBtn = document.getElementById('restartBtn');
+    restartBtn.textContent = `Retry Level ${game.level}`;
+
     // Display mistakes
     displayMistakes();
 
@@ -1212,7 +1301,7 @@ function skipToLevel(targetLevel) {
 // Setup event listeners
 function setupEventListeners() {
     document.getElementById('restartBtn').addEventListener('click', () => {
-        resetGame();
+        resetGame(true); // Keep current level when restarting
         initializeDraggableItems();
         startSpawning();
         gameLoop();
