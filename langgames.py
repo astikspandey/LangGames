@@ -28,7 +28,7 @@ def setup_venv():
 
         # Install dependencies
         print("Installing dependencies...")
-        requirements = ['pycryptodome', 'requests']
+        requirements = ['pycryptodome', 'requests', 'supabase']
         subprocess.run([venv_python, '-m', 'pip', 'install', '--quiet'] + requirements, check=True)
 
         # Re-execute script in venv
@@ -63,13 +63,13 @@ else:
 
 from walkerauth_client import WalkerAuthClient
 
-# Import pastebin client (replaces Supabase)
+# Import Supabase client
 try:
-    from pastebin_client import create_pastebin_client
-    PASTEBIN_AVAILABLE = True
+    from supabase import create_client, Client
+    SUPABASE_AVAILABLE = True
 except ImportError:
-    PASTEBIN_AVAILABLE = False
-    print("Warning: Pastebin client not available")
+    SUPABASE_AVAILABLE = False
+    print("Warning: Supabase client not available. Install with: pip install supabase")
 
 # Check for 'net' parameter to enable network hosting
 if 'net' in sys.argv:
@@ -90,55 +90,55 @@ PORT = int(os.getenv('PORT', '2937'))
 WALKERAUTH_SECRET_KEY = "langgames_secret_key_12345"
 walkerauth_client = WalkerAuthClient(WALKERAUTH_SECRET_KEY)
 
-# Initialize pastebin client (replaces Supabase)
-supabase_client = None  # Keep name for compatibility
+# Initialize Supabase client
+supabase_client: Client = None
 
-def load_pastebin_credentials():
-    """Load pastebin credentials from .env file"""
+def load_supabase_credentials():
+    """Load Supabase credentials from .env file"""
     env_path = ".env"
-    pastebin_url = None
-    site_id = None
-    secret_key = None
+    supabase_url = None
+    supabase_key = None
 
     if os.path.exists(env_path):
         with open(env_path, 'r') as f:
             for line in f:
                 line = line.strip()
-                if line.startswith('PASTEBIN_URL='):
-                    pastebin_url = line.split('=', 1)[1]
-                elif line.startswith('SITE_ID='):
-                    site_id = line.split('=', 1)[1]
-                elif line.startswith('SECRET_KEY='):
-                    secret_key = line.split('=', 1)[1]
+                if line.startswith('SUPABASE_URL='):
+                    supabase_url = line.split('=', 1)[1]
+                elif line.startswith('SUPABASE_KEY='):
+                    supabase_key = line.split('=', 1)[1]
 
-    return pastebin_url, site_id, secret_key
+    return supabase_url, supabase_key
 
-def init_pastebin():
-    """Initialize pastebin client"""
-    global supabase_client  # Keep name for compatibility
+def init_supabase():
+    """Initialize Supabase client"""
+    global supabase_client
 
-    if not PASTEBIN_AVAILABLE:
-        print("✗ Pastebin client not available")
+    if not SUPABASE_AVAILABLE:
+        print("✗ Supabase client not available")
+        print("  Install with: pip install supabase")
         return None
 
-    pastebin_url, site_id, secret_key = load_pastebin_credentials()
+    supabase_url, supabase_key = load_supabase_credentials()
 
-    if pastebin_url and site_id and secret_key:
+    if supabase_url and supabase_key and \
+       supabase_url != 'your_supabase_url_here' and \
+       supabase_key != 'your_supabase_anon_key_here':
         try:
-            supabase_client = create_pastebin_client(pastebin_url, site_id, secret_key)
-            print(f"✓ Encrypted pastebin connected: {pastebin_url}")
-            print(f"  Site ID: {site_id}")
+            supabase_client = create_client(supabase_url, supabase_key)
+            print(f"✓ Supabase connected: {supabase_url}")
             return supabase_client
         except Exception as e:
-            print(f"✗ Pastebin connection failed: {e}")
+            print(f"✗ Supabase connection failed: {e}")
             return None
     else:
-        print("ℹ Pastebin credentials not found in .env")
-        print("  Required: PASTEBIN_URL, SITE_ID, SECRET_KEY")
+        print("ℹ Supabase credentials not configured in .env")
+        print("  Required: SUPABASE_URL, SUPABASE_KEY")
+        print("  Get these from: https://app.supabase.com")
         return None
 
-# Initialize pastebin on startup
-init_pastebin()
+# Initialize Supabase on startup
+init_supabase()
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
