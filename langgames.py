@@ -176,7 +176,7 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({"offline": OFFLINE_MODE}).encode())
             return
 
-        if self.path == '/api/data/load':
+        if self.path.startswith('/api/data/load'):
             # Load data from Supabase only
             try:
                 if not supabase_client:
@@ -366,7 +366,7 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         # Handle save data request
-        if self.path == '/api/data/save':
+        if self.path.startswith('/api/data/save'):
             try:
                 data = json.loads(post_data.decode())
 
