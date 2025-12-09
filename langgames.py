@@ -79,11 +79,6 @@ else:
     HOST = '127.0.0.1'  # Localhost only
     print("Local mode - accessible only from this computer")
 
-# Check for 'offline' parameter to enable offline mode
-OFFLINE_MODE = 'offline' in sys.argv
-if OFFLINE_MODE:
-    print("Offline mode enabled - using localStorage only")
-
 PORT = int(os.getenv('PORT', '2937'))
 
 # WalkerAuth Configuration
@@ -168,14 +163,6 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.path = '/index.html'
 
         # Handle API endpoints
-        if self.path == '/api/offline-mode':
-            # Return offline mode status
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({"offline": OFFLINE_MODE}).encode())
-            return
-
         if self.path.startswith('/api/data/load'):
             # Load data from Supabase only
             try:

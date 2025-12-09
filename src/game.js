@@ -7,7 +7,6 @@ const SERVER_URL = window.location.origin;
 
 // Ad configuration - Check if config.txt exists
 let ADS_ENABLED = false;
-let OFFLINE_MODE = false;
 
 async function checkAdConfig() {
     try {
@@ -27,95 +26,10 @@ async function checkAdConfig() {
     return ADS_ENABLED;
 }
 
-async function checkOfflineMode() {
-    try {
-        const response = await fetch('/api/offline-mode');
-        if (response.ok) {
-            const data = await response.json();
-            OFFLINE_MODE = data.offline;
-            if (OFFLINE_MODE) {
-                console.log('✓ Offline mode enabled - using localStorage only');
-            } else {
-                console.log('ℹ Online mode - using Supabase');
-            }
-        }
-    } catch (error) {
-        OFFLINE_MODE = false;
-        console.log('ℹ Online mode - using Supabase');
-    }
-    return OFFLINE_MODE;
-}
-
-// Data persistence module (Supabase with localStorage fallback)
+// Data persistence module (Supabase only)
 const DataManager = {
     apiUrl: `${SERVER_URL}/api`,
     autoSaveInterval: null,
-    isOfflineMode: false,
-    offlineModeIndicator: null,
-
-    // LocalStorage fallback functions
-    saveToLocalStorage(gameData) {
-        try {
-            localStorage.setItem('langfight_gamedata', JSON.stringify(gameData));
-            console.log('✓ Game data saved to localStorage (offline mode)');
-            return true;
-        } catch (error) {
-            console.error('✗ Failed to save to localStorage:', error);
-            return false;
-        }
-    },
-
-    loadFromLocalStorage() {
-        try {
-            const data = localStorage.getItem('langfight_gamedata');
-            if (data) {
-                const gameData = JSON.parse(data);
-                console.log('✓ Game data loaded from localStorage (offline mode)');
-                return gameData;
-            }
-            return null;
-        } catch (error) {
-            console.error('✗ Failed to load from localStorage:', error);
-            return null;
-        }
-    },
-
-    showOfflineIndicator() {
-        if (!this.offlineModeIndicator) {
-            this.offlineModeIndicator = document.createElement('div');
-            this.offlineModeIndicator.id = 'offlineIndicator';
-            this.offlineModeIndicator.innerHTML = '📵 Offline Mode';
-
-            // Check if mobile for responsive sizing
-            const deviceType = DeviceInfo.getDeviceType();
-            const isMobile = deviceType === 'mobile';
-
-            this.offlineModeIndicator.style.cssText = `
-                position: fixed;
-                top: ${isMobile ? '40px' : '50px'};
-                right: ${isMobile ? '5px' : '10px'};
-                background: rgba(255, 152, 0, 0.95);
-                color: white;
-                padding: ${isMobile ? '6px 10px' : '10px 15px'};
-                border-radius: ${isMobile ? '6px' : '8px'};
-                font-size: ${isMobile ? '11px' : '14px'};
-                font-weight: bold;
-                z-index: 1000;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                animation: slideIn 0.3s ease-out;
-                max-width: ${isMobile ? '120px' : 'none'};
-                text-align: center;
-            `;
-            document.body.appendChild(this.offlineModeIndicator);
-        }
-    },
-
-    hideOfflineIndicator() {
-        if (this.offlineModeIndicator) {
-            this.offlineModeIndicator.remove();
-            this.offlineModeIndicator = null;
-        }
-    },
 
     async saveGameData() {
         // Get user_id from localStorage (WalkerAuth) or use default
@@ -135,16 +49,7 @@ const DataManager = {
             }
         };
 
-        // If offline mode is enabled, use localStorage only
-        if (OFFLINE_MODE) {
-            if (!this.isOfflineMode) {
-                this.isOfflineMode = true;
-                this.showOfflineIndicator();
-            }
-            return this.saveToLocalStorage(gameData);
-        }
-
-        // Try Supabase (no fallback unless offline mode enabled)
+        // Save to Supabase
         try {
             const response = await fetch(`${this.apiUrl}/data/save`, {
                 method: 'POST',
@@ -170,16 +75,7 @@ const DataManager = {
         const userEmail = localStorage.getItem('user_email');
         const userId = userEmail || localStorage.getItem('user_id') || 'default_user';
 
-        // If offline mode is enabled, use localStorage only
-        if (OFFLINE_MODE) {
-            if (!this.isOfflineMode) {
-                this.isOfflineMode = true;
-                this.showOfflineIndicator();
-            }
-            return this.loadFromLocalStorage();
-        }
-
-        // Try Supabase (no fallback unless offline mode enabled)
+        // Load from Supabase
         try {
             const response = await fetch(`${this.apiUrl}/data/load?user_id=${encodeURIComponent(userId)}`);
 
@@ -724,9 +620,6 @@ const Tutorial = {
 async function initGame() {
     // Check if ads should be enabled (config.txt exists)
     await checkAdConfig();
-
-    // Check if offline mode is enabled (server started with 'offline' param)
-    await checkOfflineMode();
 
     game.canvas = document.getElementById('gameCanvas');
     game.ctx = game.canvas.getContext('2d');
