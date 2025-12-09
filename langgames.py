@@ -89,19 +89,22 @@ walkerauth_client = WalkerAuthClient(WALKERAUTH_SECRET_KEY)
 supabase_client: Client = None
 
 def load_supabase_credentials():
-    """Load Supabase credentials from .env file"""
-    env_path = ".env"
-    supabase_url = None
-    supabase_key = None
+    """Load Supabase credentials from environment variables or .env file"""
+    # First, try environment variables (for Render/production)
+    supabase_url = os.getenv('SUPABASE_URL')
+    supabase_key = os.getenv('SUPABASE_KEY')
 
-    if os.path.exists(env_path):
-        with open(env_path, 'r') as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith('SUPABASE_URL='):
-                    supabase_url = line.split('=', 1)[1]
-                elif line.startswith('SUPABASE_KEY='):
-                    supabase_key = line.split('=', 1)[1]
+    # If not found, try reading from .env file (for local development)
+    if not supabase_url or not supabase_key:
+        env_path = ".env"
+        if os.path.exists(env_path):
+            with open(env_path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('SUPABASE_URL=') and not supabase_url:
+                        supabase_url = line.split('=', 1)[1]
+                    elif line.startswith('SUPABASE_KEY=') and not supabase_key:
+                        supabase_key = line.split('=', 1)[1]
 
     return supabase_url, supabase_key
 
