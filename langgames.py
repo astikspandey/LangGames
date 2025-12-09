@@ -183,7 +183,7 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 user_id = params.get('user_id', ['default_user'])[0]
 
                 # Query Supabase
-                result = supabase_client.table('GIDbasedLV').select('*').eq('user_id', user_id).order('updated_at', desc=True).limit(1).execute()
+                result = supabase_client.table('GIDbasedlv').select('*').eq('user_id', user_id).order('updated_at', desc=True).limit(1).execute()
 
                 if result.data and len(result.data) > 0:
                     # Use the most recent save
@@ -384,15 +384,15 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 }
 
                 # Check if record exists
-                existing = supabase_client.table('GIDbasedLV').select('id').eq('user_id', user_id).execute()
+                existing = supabase_client.table('GIDbasedlv').select('id').eq('user_id', user_id).execute()
 
                 if existing.data and len(existing.data) > 0:
                     # Update existing record
-                    result = supabase_client.table('GIDbasedLV').update(supabase_data).eq('user_id', user_id).execute()
+                    result = supabase_client.table('GIDbasedlv').update(supabase_data).eq('user_id', user_id).execute()
                     print(f"✓ Updated Supabase data for user: {user_id}")
                 else:
                     # Insert new record
-                    result = supabase_client.table('GIDbasedLV').insert(supabase_data).execute()
+                    result = supabase_client.table('GIDbasedlv').insert(supabase_data).execute()
                     print(f"✓ Inserted new Supabase data for user: {user_id}")
 
                 self.send_response(200)
