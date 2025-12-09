@@ -1,7 +1,7 @@
 # Environment variables (contains encryption key)
 .env
 .env.example
-
+FOR_CLAUDE.md
 # Encrypted game data
 EMDATA.txt
 START_HERE.sh
