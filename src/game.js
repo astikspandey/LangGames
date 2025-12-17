@@ -861,6 +861,12 @@ function startSpawning() {
 
     const spawnRate = baseRate / game.speedMultiplier;
 
+    // Spawn first vehicle immediately
+    if (!game.isGameOver) {
+        spawnTank();
+    }
+
+    // Then start interval for subsequent spawns
     game.spawnInterval = setInterval(() => {
         if (!game.isGameOver) {
             spawnTank();
