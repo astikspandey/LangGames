@@ -404,11 +404,26 @@ class PastebinAdapter:
                 data = results[0]['data']
                 # Add paste_id for update operations
                 data['_paste_id'] = results[0]['id']
-                return type('obj', (object,), {'data': [data]})
+                result = type('obj', (object,), {'data': [data]})
             else:
-                return type('obj', (object,), {'data': []})
+                result = type('obj', (object,), {'data': []})
+
+            # Clear state after execution to prevent conflicts with next operation
+            self._filters = {}
+            if hasattr(self, '_update_data'):
+                delattr(self, '_update_data')
+            if hasattr(self, '_update_filter'):
+                delattr(self, '_update_filter')
+
+            return result
         except Exception as e:
             logger.error(f"❌ Query error: {type(e).__name__}: {str(e)}", exc_info=True)
+            # Clear state even on error
+            self._filters = {}
+            if hasattr(self, '_update_data'):
+                delattr(self, '_update_data')
+            if hasattr(self, '_update_filter'):
+                delattr(self, '_update_filter')
             return type('obj', (object,), {'data': []})
 
     def insert(self, data):
@@ -425,9 +440,21 @@ class PastebinAdapter:
                     metadata[field] = data[field]
 
             result = self.client.store(location=user_id, data=data, metadata=metadata)
+
+            # Clear state after insert
+            if hasattr(self, '_update_data'):
+                delattr(self, '_update_data')
+            if hasattr(self, '_update_filter'):
+                delattr(self, '_update_filter')
+
             return type('obj', (object,), {'data': [data]})
         except Exception as e:
             logger.error(f"❌ Insert error: {type(e).__name__}: {str(e)}", exc_info=True)
+            # Clear state even on error
+            if hasattr(self, '_update_data'):
+                delattr(self, '_update_data')
+            if hasattr(self, '_update_filter'):
+                delattr(self, '_update_filter')
             raise
 
     def update(self, data):
@@ -454,13 +481,26 @@ class PastebinAdapter:
             if results:
                 paste_id = results[0]['id']
                 result = self.client.update(paste_id, self._update_data, metadata=metadata)
-                return type('obj', (object,), {'data': [self._update_data]})
+                update_result = type('obj', (object,), {'data': [self._update_data]})
             else:
                 # No existing data, insert instead
                 self._update_data['user_id'] = user_id
-                return self.insert(self._update_data)
+                update_result = self.insert(self._update_data)
+
+            # Clear state after update
+            if hasattr(self, '_update_data'):
+                delattr(self, '_update_data')
+            if hasattr(self, '_update_filter'):
+                delattr(self, '_update_filter')
+
+            return update_result
         except Exception as e:
             logger.error(f"❌ Update error: {type(e).__name__}: {str(e)}", exc_info=True)
+            # Clear state even on error
+            if hasattr(self, '_update_data'):
+                delattr(self, '_update_data')
+            if hasattr(self, '_update_filter'):
+                delattr(self, '_update_filter')
             raise
 
 
