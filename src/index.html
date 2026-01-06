@@ -186,28 +186,37 @@
         window.addEventListener('load', () => {
             setTimeout(() => {
                 console.log('=== GAME DEBUG INFO ===');
-                console.log('Game object:', game);
-                console.log('Game level:', game?.level);
-                console.log('Draggable items:', game?.draggableItems?.length);
-                console.log('Tanks:', game?.tanks?.length);
-                console.log('Active tanks:', game?.activeTanks?.length);
+                console.log('Speed multiplier:', game?.speedMultiplier);
                 console.log('Is game over:', game?.isGameOver);
-                console.log('Canvas:', game?.canvas);
-                console.log('Context:', game?.ctx);
-                console.log('Spawn interval:', game?.spawnInterval);
-                console.log('Animation frame:', game?.animationFrame);
+                console.log('Tanks spawned:', game?.tanks?.length);
+                console.log('Animation frame running:', game?.animationFrame);
 
-                if (game?.draggableItems) {
-                    console.log('First 3 vocabulary items:', game.draggableItems.slice(0, 3));
-                }
-
-                // Check if getVocabularyForLevel exists
-                console.log('getVocabularyForLevel function exists:', typeof getVocabularyForLevel);
-                if (typeof getVocabularyForLevel === 'function') {
-                    console.log('Vocabulary for level 1:', getVocabularyForLevel(1).length, 'items');
+                // Check first tank movement
+                if (game?.tanks?.length > 0) {
+                    const firstTank = game.tanks[0];
+                    console.log('First tank:', {
+                        x: firstTank.x,
+                        y: firstTank.y,
+                        speed: firstTank.speed,
+                        progress: firstTank.progress,
+                        waypointIndex: firstTank.waypointIndex
+                    });
                 }
 
                 console.log('=====================');
+
+                // Monitor movement
+                let lastX = game?.tanks?.[0]?.x || 0;
+                setInterval(() => {
+                    if (game?.tanks?.length > 0) {
+                        const tank = game.tanks[0];
+                        const moving = tank.x !== lastX;
+                        console.log(`Tank movement: x=${tank.x.toFixed(1)}, waypoint=${tank.waypointIndex}, MOVING=${moving ? 'YES ✓' : 'NO ✗'}`);
+                        lastX = tank.x;
+                    } else {
+                        console.log('No tanks to monitor');
+                    }
+                }, 1000);
             }, 2000);
         });
     </script>
