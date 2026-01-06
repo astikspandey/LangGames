@@ -372,9 +372,9 @@ class PastebinAdapter:
         """Filter by equality (mimics Supabase interface)"""
         # Check if this is an update operation
         if hasattr(self, '_update_data') and self._update_data is not None:
-            # This is an update operation
+            # This is an update operation - store filter but don't execute yet
             self._update_filter = (column, value)
-            return self.execute_update()
+            return self
         else:
             # This is a select operation
             self._filters[column] = value
@@ -392,6 +392,10 @@ class PastebinAdapter:
 
     def execute(self):
         """Execute the query"""
+        # Check if this is an update operation
+        if hasattr(self, '_update_data') and self._update_data is not None:
+            return self.execute_update()
+
         # For GIDbasedLV table, user_id is the location
         user_id = self._filters.get('user_id', 'default_user')
 
