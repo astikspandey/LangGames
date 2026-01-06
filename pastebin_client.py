@@ -7,8 +7,12 @@ import requests
 import hashlib
 import time
 import json
+import logging
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class PastebinClient:
@@ -99,6 +103,8 @@ class PastebinClient:
     def handshake(self):
         """Perform handshake with pastebin"""
         try:
+            logger.debug(f"🤝 Starting handshake with {self.pastebin_url}")
+
             # Step 1: Initiate handshake
             response = requests.get(f"{self.pastebin_url}/handshake", params={
                 'site_id': self.site_id
@@ -108,10 +114,12 @@ class PastebinClient:
 
             session_id = result['session_id']
             challenge = result['challenge']
+            logger.debug(f"🔑 Received challenge from pastebin")
 
             # Step 2: Verify we have correct secret key
             our_hash = self._sha256(self.secret_key)
             if our_hash != challenge:
+                logger.error(f"❌ Secret key mismatch! Expected: {challenge[:10]}..., Got: {our_hash[:10]}...")
                 raise Exception('Secret key mismatch')
 
             # Step 3: Send verification
@@ -121,14 +129,19 @@ class PastebinClient:
             })
             verify_response.raise_for_status()
 
+            logger.info(f"✅ Handshake successful with {self.pastebin_url}")
             return True
         except Exception as e:
-            print(f"Handshake failed: {e}")
+            logger.error(f"❌ Handshake failed: {type(e).__name__}: {str(e)}")
             raise
 
     def store(self, location, data, metadata=None):
         """Store data in pastebin with optional metadata"""
         try:
+            logger.info(f"💾 Storing data to pastebin (location={location})")
+            if metadata:
+                logger.debug(f"📋 Metadata: {metadata}")
+
             # Perform handshake
             self.handshake()
 
@@ -137,6 +150,7 @@ class PastebinClient:
 
             # Encrypt the data
             encrypted_result = self._encrypt(data, epoch)
+            logger.debug(f"🔐 Data encrypted (size={len(encrypted_result['encrypted'])} bytes)")
 
             # Generate auth proof
             auth_proof = self._generate_auth_proof(epoch)
@@ -158,6 +172,7 @@ class PastebinClient:
             encrypted_payload = self._encrypt_payload(payload)
 
             # Send to pastebin (only site_id is unencrypted)
+            logger.debug(f"📤 Sending to {self.pastebin_url}/store")
             response = requests.post(f"{self.pastebin_url}/store", json={
                 'site_id': self.site_id,
                 **encrypted_payload
@@ -167,15 +182,18 @@ class PastebinClient:
             # Decrypt response
             result = response.json()
             if 'encrypted_payload' in result:
-                return self._decrypt_payload(result['encrypted_payload'], result['payload_iv'])
+                result = self._decrypt_payload(result['encrypted_payload'], result['payload_iv'])
+
+            logger.info(f"✅ Data stored successfully (id={result.get('id', 'unknown')})")
             return result
         except Exception as e:
-            print(f"Store failed: {e}")
+            logger.error(f"❌ Store failed: {type(e).__name__}: {str(e)}")
             raise
 
     def retrieve(self, location=None):
         """Retrieve data from pastebin"""
         try:
+            logger.info(f"📥 Retrieving data from pastebin (location={location or 'all'})")
             epoch = int(time.time())
             auth_proof = self._generate_auth_proof(epoch)
 
@@ -192,6 +210,7 @@ class PastebinClient:
             encrypted_payload = self._encrypt_payload(payload)
 
             # Send to pastebin (only site_id is unencrypted)
+            logger.debug(f"📤 Sending to {self.pastebin_url}/retrieve")
             response = requests.post(f"{self.pastebin_url}/retrieve", json={
                 'site_id': self.site_id,
                 **encrypted_payload
@@ -202,6 +221,8 @@ class PastebinClient:
             result = response.json()
             if 'encrypted_payload' in result:
                 result = self._decrypt_payload(result['encrypted_payload'], result['payload_iv'])
+
+            logger.debug(f"📦 Received {len(result.get('data', []))} items from pastebin")
 
             # Decrypt the retrieved data
             decrypted_data = []
@@ -223,16 +244,18 @@ class PastebinClient:
                     # Include metadata if present
                     if 'metadata' in item:
                         paste_item['metadata'] = item['metadata']
+                        logger.debug(f"📋 Metadata blob: {item['metadata'][:50]}...")
                     if 'metadata_parsed' in item:
                         paste_item['metadata_parsed'] = item['metadata_parsed']
 
                     decrypted_data.append(paste_item)
                 except Exception as e:
-                    print(f"Failed to decrypt item {item['id']}: {e}")
+                    logger.error(f"❌ Failed to decrypt item {item['id']}: {e}")
 
+            logger.info(f"✅ Successfully retrieved {len(decrypted_data)} items")
             return decrypted_data
         except Exception as e:
-            print(f"Retrieve failed: {e}")
+            logger.error(f"❌ Retrieve failed: {type(e).__name__}: {str(e)}")
             raise
 
     def update(self, paste_id, data, metadata=None):

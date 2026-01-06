@@ -45,6 +45,8 @@ import webbrowser
 import time
 import threading
 import json
+import logging
+from datetime import datetime
 
 USE_PYNPUT = os.getenv('DISABLE_PYNPUT', '0') != '1'
 Controller = None
@@ -135,6 +137,14 @@ def init_supabase():
         print("  Required: PASTEBIN_URL, SITE_ID, SECRET_KEY")
         return None
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
+
 # Initialize Supabase on startup
 init_supabase()
 
@@ -169,7 +179,10 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         if self.path.startswith('/api/data/load'):
             # Load data from Supabase only
             try:
+                logger.info(f"📥 Load request: {self.path}")
+
                 if not supabase_client:
+                    logger.error("❌ Database not configured")
                     self.send_response(503)
                     self.send_header('Content-type', 'application/json')
                     self.end_headers()
@@ -182,15 +195,17 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 params = parse_qs(parsed_url.query)
                 user_id = params.get('user_id', ['default_user'])[0]
 
+                logger.info(f"🔍 Querying pastebin for user: {user_id}")
+
                 # Query Supabase
                 result = supabase_client.table('GIDbasedlv').select('*').eq('user_id', user_id).order('updated_at', desc=True).limit(1).execute()
 
                 if result.data and len(result.data) > 0:
                     # Use the most recent save
                     data = result.data[0]
-                    print(f"✓ Loaded data from Supabase for user: {user_id}")
+                    logger.info(f"✅ Loaded data for user {user_id}: level={data.get('level', 0)}, score={data.get('score', 0)}")
                 else:
-                    print(f"ℹ No data found for user: {user_id}")
+                    logger.info(f"ℹ️  No data found for user: {user_id}")
                     data = {}
 
                 self.send_response(200)
@@ -198,7 +213,7 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps(data).encode())
             except Exception as e:
-                print(f"✗ Supabase load error: {e}")
+                logger.error(f"❌ Load error: {type(e).__name__}: {str(e)}", exc_info=True)
                 self.send_response(500)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
@@ -359,9 +374,11 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         if self.path.startswith('/api/data/save'):
             try:
                 data = json.loads(post_data.decode())
+                logger.info(f"💾 Save request for user: {data.get('user_id', 'default_user')}")
 
                 # Save to database (encrypted pastebin)
                 if not supabase_client:
+                    logger.error("❌ Database not configured")
                     self.send_response(503)
                     self.send_header('Content-type', 'application/json')
                     self.end_headers()
@@ -383,24 +400,28 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'updated_at': 'now()'
                 }
 
+                logger.info(f"📊 Saving: level={supabase_data['level']}, score={supabase_data['score']}, highScore={supabase_data['highScore']}")
+
                 # Check if record exists
                 existing = supabase_client.table('GIDbasedlv').select('id').eq('user_id', user_id).execute()
 
                 if existing.data and len(existing.data) > 0:
                     # Update existing record
+                    logger.info(f"🔄 Updating existing record for user: {user_id}")
                     result = supabase_client.table('GIDbasedlv').update(supabase_data).eq('user_id', user_id).execute()
-                    print(f"✓ Updated Supabase data for user: {user_id}")
+                    logger.info(f"✅ Updated pastebin data for user: {user_id}")
                 else:
                     # Insert new record
+                    logger.info(f"➕ Creating new record for user: {user_id}")
                     result = supabase_client.table('GIDbasedlv').insert(supabase_data).execute()
-                    print(f"✓ Inserted new Supabase data for user: {user_id}")
+                    logger.info(f"✅ Inserted new pastebin data for user: {user_id}")
 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"success": True}).encode())
             except Exception as e:
-                print(f"✗ Supabase save error: {e}")
+                logger.error(f"❌ Save error: {type(e).__name__}: {str(e)}", exc_info=True)
                 self.send_response(500)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
