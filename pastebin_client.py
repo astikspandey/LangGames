@@ -187,7 +187,7 @@ class PastebinClient:
             logger.info(f"✅ Data stored successfully (id={result.get('id', 'unknown')})")
             return result
         except Exception as e:
-            logger.error(f"❌ Store failed: {type(e).__name__}: {str(e)}")
+            logger.error(f"❌ Store failed: {type(e).__name__}: {str(e)}", exc_info=True)
             raise
 
     def retrieve(self, location=None):
@@ -261,6 +261,10 @@ class PastebinClient:
     def update(self, paste_id, data, metadata=None):
         """Update existing data with optional metadata"""
         try:
+            logger.info(f"🔄 Updating paste {paste_id}")
+            if metadata:
+                logger.debug(f"📋 Metadata: {metadata}")
+
             self.handshake()
 
             epoch = int(time.time())
@@ -283,6 +287,7 @@ class PastebinClient:
             # Encrypt the payload
             encrypted_payload = self._encrypt_payload(payload)
 
+            logger.debug(f"📤 Sending to {self.pastebin_url}/update")
             response = requests.put(f"{self.pastebin_url}/update", json={
                 'site_id': self.site_id,
                 **encrypted_payload
@@ -292,15 +297,18 @@ class PastebinClient:
             # Decrypt response
             result = response.json()
             if 'encrypted_payload' in result:
-                return self._decrypt_payload(result['encrypted_payload'], result['payload_iv'])
+                result = self._decrypt_payload(result['encrypted_payload'], result['payload_iv'])
+
+            logger.info(f"✅ Paste {paste_id} updated successfully")
             return result
         except Exception as e:
-            print(f"Update failed: {e}")
+            logger.error(f"❌ Update failed: {type(e).__name__}: {str(e)}", exc_info=True)
             raise
 
     def delete(self, paste_id):
         """Delete data"""
         try:
+            logger.info(f"🗑️  Deleting paste {paste_id}")
             epoch = int(time.time())
             auth_proof = self._generate_auth_proof(epoch)
 
@@ -323,10 +331,12 @@ class PastebinClient:
             # Decrypt response
             result = response.json()
             if 'encrypted_payload' in result:
-                return self._decrypt_payload(result['encrypted_payload'], result['payload_iv'])
+                result = self._decrypt_payload(result['encrypted_payload'], result['payload_iv'])
+
+            logger.info(f"✅ Paste {paste_id} deleted successfully")
             return result
         except Exception as e:
-            print(f"Delete failed: {e}")
+            logger.error(f"❌ Delete failed: {type(e).__name__}: {str(e)}")
             raise
 
 
@@ -351,12 +361,24 @@ class PastebinAdapter:
         self._filters = {}
         self._order_by = None
         self._limit_count = None
+        # Clear update state to avoid conflicts
+        if hasattr(self, '_update_data'):
+            delattr(self, '_update_data')
+        if hasattr(self, '_update_filter'):
+            delattr(self, '_update_filter')
         return self
 
     def eq(self, column, value):
         """Filter by equality (mimics Supabase interface)"""
-        self._filters[column] = value
-        return self
+        # Check if this is an update operation
+        if hasattr(self, '_update_data') and self._update_data is not None:
+            # This is an update operation
+            self._update_filter = (column, value)
+            return self.execute_update()
+        else:
+            # This is a select operation
+            self._filters[column] = value
+            return self
 
     def order(self, column, desc=False):
         """Order results (mimics Supabase interface)"""
@@ -386,7 +408,7 @@ class PastebinAdapter:
             else:
                 return type('obj', (object,), {'data': []})
         except Exception as e:
-            print(f"Query error: {e}")
+            logger.error(f"❌ Query error: {type(e).__name__}: {str(e)}", exc_info=True)
             return type('obj', (object,), {'data': []})
 
     def insert(self, data):
@@ -405,7 +427,7 @@ class PastebinAdapter:
             result = self.client.store(location=user_id, data=data, metadata=metadata)
             return type('obj', (object,), {'data': [data]})
         except Exception as e:
-            print(f"Insert error: {e}")
+            logger.error(f"❌ Insert error: {type(e).__name__}: {str(e)}", exc_info=True)
             raise
 
     def update(self, data):
@@ -413,17 +435,6 @@ class PastebinAdapter:
         self._update_data = data
         self._update_filter = None
         return self
-
-    def eq(self, column, value):
-        """Filter for various operations"""
-        if hasattr(self, '_update_data'):
-            # This is an update operation
-            self._update_filter = (column, value)
-            return self.execute_update()
-        else:
-            # This is a select operation
-            self._filters[column] = value
-            return self
 
     def execute_update(self):
         """Execute the update operation"""
@@ -449,7 +460,7 @@ class PastebinAdapter:
                 self._update_data['user_id'] = user_id
                 return self.insert(self._update_data)
         except Exception as e:
-            print(f"Update error: {e}")
+            logger.error(f"❌ Update error: {type(e).__name__}: {str(e)}", exc_info=True)
             raise
 
 
