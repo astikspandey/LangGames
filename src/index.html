@@ -181,5 +181,35 @@
     <script src="vocabulary.js"></script>
     <script src="crypto.js"></script>
     <script src="game.js"></script>
+    <script>
+        // Debug script to help identify issues
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                console.log('=== GAME DEBUG INFO ===');
+                console.log('Game object:', game);
+                console.log('Game level:', game?.level);
+                console.log('Draggable items:', game?.draggableItems?.length);
+                console.log('Tanks:', game?.tanks?.length);
+                console.log('Active tanks:', game?.activeTanks?.length);
+                console.log('Is game over:', game?.isGameOver);
+                console.log('Canvas:', game?.canvas);
+                console.log('Context:', game?.ctx);
+                console.log('Spawn interval:', game?.spawnInterval);
+                console.log('Animation frame:', game?.animationFrame);
+
+                if (game?.draggableItems) {
+                    console.log('First 3 vocabulary items:', game.draggableItems.slice(0, 3));
+                }
+
+                // Check if getVocabularyForLevel exists
+                console.log('getVocabularyForLevel function exists:', typeof getVocabularyForLevel);
+                if (typeof getVocabularyForLevel === 'function') {
+                    console.log('Vocabulary for level 1:', getVocabularyForLevel(1).length, 'items');
+                }
+
+                console.log('=====================');
+            }, 2000);
+        });
+    </script>
 </body>
 </html>
