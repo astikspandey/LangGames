@@ -1394,7 +1394,15 @@ function initAuth() {
 }
 
 // Start game when page loads
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
     initAuth();
-    initGame();
+    await initGame();
+
+    // Hide loading screen once game is ready
+    setTimeout(() => {
+        const loadingScreen = document.getElementById('loadingScreen');
+        if (loadingScreen) {
+            loadingScreen.classList.add('hidden');
+        }
+    }, 500); // Small delay for smooth transition
 });
