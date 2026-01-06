@@ -63,13 +63,13 @@ else:
 
 from walkerauth_client import WalkerAuthClient
 
-# Import Supabase client
+# Import Pastebin client (replaces Supabase)
 try:
-    from supabase import create_client, Client
-    SUPABASE_AVAILABLE = True
+    from pastebin_client import create_pastebin_client
+    SUPABASE_AVAILABLE = True  # Keep variable name for compatibility
 except ImportError:
     SUPABASE_AVAILABLE = False
-    print("Warning: Supabase client not available. Install with: pip install supabase")
+    print("Warning: Pastebin client not available. Check pastebin_client.py")
 
 # Check for 'net' parameter to enable network hosting
 if 'net' in sys.argv:
@@ -85,54 +85,54 @@ PORT = int(os.getenv('PORT', '2937'))
 WALKERAUTH_SECRET_KEY = "langgames_secret_key_12345"
 walkerauth_client = WalkerAuthClient(WALKERAUTH_SECRET_KEY)
 
-# Initialize Supabase client
-supabase_client: Client = None
+# Initialize Pastebin client (replaces Supabase)
+supabase_client = None  # Keep variable name for compatibility
 
 def load_supabase_credentials():
-    """Load Supabase credentials from environment variables or .env file"""
+    """Load Pastebin credentials from environment variables or .env file"""
     # First, try environment variables (for Render/production)
-    supabase_url = os.getenv('SUPABASE_URL')
-    supabase_key = os.getenv('SUPABASE_KEY')
+    pastebin_url = os.getenv('PASTEBIN_URL')
+    site_id = os.getenv('SITE_ID')
+    secret_key = os.getenv('SECRET_KEY')
 
     # If not found, try reading from .env file (for local development)
-    if not supabase_url or not supabase_key:
+    if not pastebin_url or not site_id or not secret_key:
         env_path = ".env"
         if os.path.exists(env_path):
             with open(env_path, 'r') as f:
                 for line in f:
                     line = line.strip()
-                    if line.startswith('SUPABASE_URL=') and not supabase_url:
-                        supabase_url = line.split('=', 1)[1]
-                    elif line.startswith('SUPABASE_KEY=') and not supabase_key:
-                        supabase_key = line.split('=', 1)[1]
+                    if line.startswith('PASTEBIN_URL=') and not pastebin_url:
+                        pastebin_url = line.split('=', 1)[1]
+                    elif line.startswith('SITE_ID=') and not site_id:
+                        site_id = line.split('=', 1)[1]
+                    elif line.startswith('SECRET_KEY=') and not secret_key:
+                        secret_key = line.split('=', 1)[1]
 
-    return supabase_url, supabase_key
+    return pastebin_url, site_id, secret_key
 
 def init_supabase():
-    """Initialize Supabase client"""
+    """Initialize Pastebin client (replaces Supabase)"""
     global supabase_client
 
     if not SUPABASE_AVAILABLE:
-        print("✗ Supabase client not available")
-        print("  Install with: pip install supabase")
+        print("✗ Pastebin client not available")
+        print("  Check pastebin_client.py")
         return None
 
-    supabase_url, supabase_key = load_supabase_credentials()
+    pastebin_url, site_id, secret_key = load_supabase_credentials()
 
-    if supabase_url and supabase_key and \
-       supabase_url != 'your_supabase_url_here' and \
-       supabase_key != 'your_supabase_anon_key_here':
+    if pastebin_url and site_id and secret_key:
         try:
-            supabase_client = create_client(supabase_url, supabase_key)
-            print(f"✓ Supabase connected: {supabase_url}")
+            supabase_client = create_pastebin_client(pastebin_url, site_id, secret_key)
+            print(f"✓ Pastebin connected: {pastebin_url}")
             return supabase_client
         except Exception as e:
-            print(f"✗ Supabase connection failed: {e}")
+            print(f"✗ Pastebin connection failed: {e}")
             return None
     else:
-        print("ℹ Supabase credentials not configured in .env")
-        print("  Required: SUPABASE_URL, SUPABASE_KEY")
-        print("  Get these from: https://app.supabase.com")
+        print("ℹ Pastebin credentials not configured in .env")
+        print("  Required: PASTEBIN_URL, SITE_ID, SECRET_KEY")
         return None
 
 # Initialize Supabase on startup

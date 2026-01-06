@@ -63,6 +63,39 @@ class PastebinClient:
         """Generate authentication proof"""
         return self._sha256(self.secret_key + str(epoch))
 
+    def _encrypt_payload(self, data):
+        """Encrypt entire request payload with secret key only"""
+        key_hash = hashlib.sha256(self.secret_key.encode()).digest()
+        iv = get_random_bytes(16)
+
+        cipher = AES.new(key_hash, AES.MODE_CBC, iv)
+
+        # Pad data to 16-byte boundary
+        data_str = json.dumps(data)
+        padding_length = 16 - (len(data_str) % 16)
+        padded_data = data_str + (chr(padding_length) * padding_length)
+
+        encrypted = cipher.encrypt(padded_data.encode('utf-8'))
+
+        return {
+            'encrypted_payload': encrypted.hex(),
+            'payload_iv': iv.hex()
+        }
+
+    def _decrypt_payload(self, encrypted_hex, iv_hex):
+        """Decrypt entire response payload with secret key only"""
+        key_hash = hashlib.sha256(self.secret_key.encode()).digest()
+        iv = bytes.fromhex(iv_hex)
+
+        cipher = AES.new(key_hash, AES.MODE_CBC, iv)
+        decrypted = cipher.decrypt(bytes.fromhex(encrypted_hex))
+
+        # Remove padding
+        padding_length = decrypted[-1]
+        decrypted = decrypted[:-padding_length]
+
+        return json.loads(decrypted.decode('utf-8'))
+
     def handshake(self):
         """Perform handshake with pastebin"""
         try:
@@ -93,8 +126,8 @@ class PastebinClient:
             print(f"Handshake failed: {e}")
             raise
 
-    def store(self, location, data):
-        """Store data in pastebin"""
+    def store(self, location, data, metadata=None):
+        """Store data in pastebin with optional metadata"""
         try:
             # Perform handshake
             self.handshake()
@@ -108,18 +141,34 @@ class PastebinClient:
             # Generate auth proof
             auth_proof = self._generate_auth_proof(epoch)
 
-            # Send to pastebin
-            response = requests.post(f"{self.pastebin_url}/store", json={
-                'site_id': self.site_id,
+            # Prepare request payload
+            payload = {
                 'time': epoch,
                 'encrypted_info': encrypted_result['encrypted'],
                 'loc': location,
                 'iv': encrypted_result['iv'],
                 'enc': auth_proof
+            }
+
+            # Add metadata fields if provided
+            if metadata:
+                payload.update(metadata)
+
+            # Encrypt the entire payload
+            encrypted_payload = self._encrypt_payload(payload)
+
+            # Send to pastebin (only site_id is unencrypted)
+            response = requests.post(f"{self.pastebin_url}/store", json={
+                'site_id': self.site_id,
+                **encrypted_payload
             })
             response.raise_for_status()
 
-            return response.json()
+            # Decrypt response
+            result = response.json()
+            if 'encrypted_payload' in result:
+                return self._decrypt_payload(result['encrypted_payload'], result['payload_iv'])
+            return result
         except Exception as e:
             print(f"Store failed: {e}")
             raise
@@ -130,18 +179,29 @@ class PastebinClient:
             epoch = int(time.time())
             auth_proof = self._generate_auth_proof(epoch)
 
-            params = {
-                'site_id': self.site_id,
+            # Prepare request payload
+            payload = {
                 'enc': auth_proof,
                 'epo': epoch
             }
 
             if location:
-                params['loc'] = location
+                payload['loc'] = location
 
-            response = requests.get(f"{self.pastebin_url}/retrieve", params=params)
+            # Encrypt the payload
+            encrypted_payload = self._encrypt_payload(payload)
+
+            # Send to pastebin (only site_id is unencrypted)
+            response = requests.post(f"{self.pastebin_url}/retrieve", json={
+                'site_id': self.site_id,
+                **encrypted_payload
+            })
             response.raise_for_status()
+
+            # Decrypt response
             result = response.json()
+            if 'encrypted_payload' in result:
+                result = self._decrypt_payload(result['encrypted_payload'], result['payload_iv'])
 
             # Decrypt the retrieved data
             decrypted_data = []
@@ -152,13 +212,21 @@ class PastebinClient:
                         item['iv'],
                         item['epoch']
                     )
-                    decrypted_data.append({
+                    paste_item = {
                         'id': item['id'],
                         'location': item['location'],
                         'data': decrypted,
                         'epoch': item['epoch'],
                         'created_at': item['created_at']
-                    })
+                    }
+
+                    # Include metadata if present
+                    if 'metadata' in item:
+                        paste_item['metadata'] = item['metadata']
+                    if 'metadata_parsed' in item:
+                        paste_item['metadata_parsed'] = item['metadata_parsed']
+
+                    decrypted_data.append(paste_item)
                 except Exception as e:
                     print(f"Failed to decrypt item {item['id']}: {e}")
 
@@ -167,8 +235,8 @@ class PastebinClient:
             print(f"Retrieve failed: {e}")
             raise
 
-    def update(self, paste_id, data):
-        """Update existing data"""
+    def update(self, paste_id, data, metadata=None):
+        """Update existing data with optional metadata"""
         try:
             self.handshake()
 
@@ -176,17 +244,33 @@ class PastebinClient:
             encrypted_result = self._encrypt(data, epoch)
             auth_proof = self._generate_auth_proof(epoch)
 
-            response = requests.put(f"{self.pastebin_url}/update", json={
-                'site_id': self.site_id,
+            # Prepare request payload
+            payload = {
                 'paste_id': paste_id,
                 'time': epoch,
                 'encrypted_info': encrypted_result['encrypted'],
                 'iv': encrypted_result['iv'],
                 'enc': auth_proof
+            }
+
+            # Add metadata fields if provided
+            if metadata:
+                payload.update(metadata)
+
+            # Encrypt the payload
+            encrypted_payload = self._encrypt_payload(payload)
+
+            response = requests.put(f"{self.pastebin_url}/update", json={
+                'site_id': self.site_id,
+                **encrypted_payload
             })
             response.raise_for_status()
 
-            return response.json()
+            # Decrypt response
+            result = response.json()
+            if 'encrypted_payload' in result:
+                return self._decrypt_payload(result['encrypted_payload'], result['payload_iv'])
+            return result
         except Exception as e:
             print(f"Update failed: {e}")
             raise
@@ -197,15 +281,27 @@ class PastebinClient:
             epoch = int(time.time())
             auth_proof = self._generate_auth_proof(epoch)
 
-            response = requests.delete(f"{self.pastebin_url}/delete", json={
-                'site_id': self.site_id,
+            # Prepare request payload
+            payload = {
                 'paste_id': paste_id,
                 'enc': auth_proof,
                 'epo': epoch
+            }
+
+            # Encrypt the payload
+            encrypted_payload = self._encrypt_payload(payload)
+
+            response = requests.delete(f"{self.pastebin_url}/delete", json={
+                'site_id': self.site_id,
+                **encrypted_payload
             })
             response.raise_for_status()
 
-            return response.json()
+            # Decrypt response
+            result = response.json()
+            if 'encrypted_payload' in result:
+                return self._decrypt_payload(result['encrypted_payload'], result['payload_iv'])
+            return result
         except Exception as e:
             print(f"Delete failed: {e}")
             raise
@@ -275,7 +371,15 @@ class PastebinAdapter:
         user_id = data.get('user_id', 'default_user')
 
         try:
-            result = self.client.store(location=user_id, data=data)
+            # Extract metadata fields (fields that should be searchable/filterable)
+            metadata = {}
+            metadata_fields = ['level', 'score', 'highScore', 'gamesPlayed', 'lastPlayed']
+
+            for field in metadata_fields:
+                if field in data:
+                    metadata[field] = data[field]
+
+            result = self.client.store(location=user_id, data=data, metadata=metadata)
             return type('obj', (object,), {'data': [data]})
         except Exception as e:
             print(f"Insert error: {e}")
@@ -303,11 +407,19 @@ class PastebinAdapter:
         column, user_id = self._update_filter
 
         try:
+            # Extract metadata fields
+            metadata = {}
+            metadata_fields = ['level', 'score', 'highScore', 'gamesPlayed', 'lastPlayed']
+
+            for field in metadata_fields:
+                if field in self._update_data:
+                    metadata[field] = self._update_data[field]
+
             # Get existing paste_id
             results = self.client.retrieve(location=user_id)
             if results:
                 paste_id = results[0]['id']
-                result = self.client.update(paste_id, self._update_data)
+                result = self.client.update(paste_id, self._update_data, metadata=metadata)
                 return type('obj', (object,), {'data': [self._update_data]})
             else:
                 # No existing data, insert instead
