@@ -13,6 +13,7 @@ import time
 import threading
 import json
 import logging
+import requests
 from datetime import datetime
 
 # Import dependencies (should already be installed in Render environment)
@@ -96,6 +97,22 @@ logger = logging.getLogger(__name__)
 # Initialize Supabase on startup
 logger.info("🚀 Starting LangGames server...")
 init_supabase()
+
+def keep_alive_ping():
+    """Send periodic requests to keep the pastebin server alive"""
+    url = "https://pastebin-6qu3.onrender.com"
+    while True:
+        try:
+            response = requests.get(url, timeout=5)
+            logger.info(f"🔄 Keep-alive ping sent to {url} - Status: {response.status_code}")
+        except Exception as e:
+            logger.warning(f"⚠️  Keep-alive ping failed: {e}")
+        time.sleep(3)
+
+# Start keep-alive thread
+keep_alive_thread = threading.Thread(target=keep_alive_ping, daemon=True)
+keep_alive_thread.start()
+logger.info("✓ Keep-alive thread started (pinging every 3 seconds)")
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
